@@ -1,0 +1,3 @@
+[submodule "REMEDY_GIS_RiskTool"]
+	path = REMEDY_GIS_RiskTool
+	url = https://github.com/norwegian-geotechnical-institute/REMEDY_GIS_RiskTool.git
