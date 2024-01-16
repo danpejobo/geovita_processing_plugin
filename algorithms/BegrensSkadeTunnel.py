@@ -588,9 +588,7 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         """
         Returns a localised short help string for the algorithm.
         """
-
         return self.tr("The BegrensSkade Tunnel alorithm provides a comprehensive analysis of building settlements and risks associated with subsidence and inclination due to tunnel excavation. Key features include:\nSHORT TERM AND LONG TERM\n1. Calculation of total settlements at all corners or breakpoints of a building.\n2. Determination of wall inclinations, classified based on the slope between two corner points of each wall.\n3. Assessment of the building's risk of settlement damage with respect to total settlements, classified based on the highest risk category of the corner with the greatest settlement.\n4. Assessment of the building's risk of settlement damage with respect to inclination, classified based on the highest risk category of wall inclination.\nVULNERABILITY\n5. Classification of a building's risk of damage due to total settlements, considering the vulnerability and the highest risk category of the corner with the greatest settlement.\n6. Classification of a building's risk of damage due to inclination, considering both the vulnerability and the highest risk category of wall inclination.\nThe algorithm creates a log directory under the users Downloads folder called 'REMEDY'.")
-
 
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)

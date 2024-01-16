@@ -487,6 +487,12 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         """
         return 'remedygisrisktool'
 
+    def shortHelpString(self):
+        """
+        Returns a localised short help string for the algorithm.
+        """
+        return self.tr("The BegrensSkade ImpactMap alorithm calculates both short-term and long-term settlements that occur due to the establishment of a construction pit. The difference is that ImpactMap calculates terrain settlements, meaning the settlement is calculated for each cell in a grid that covers the same area as the rock model instead of only at the corner points of the building polygons. ImpactMap only provides total settlements as output.\nThe algorithm creates a log directory under the users Downloads folder called 'REMEDY'.")
+
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)
 
