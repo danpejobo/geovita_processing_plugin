@@ -33,8 +33,12 @@ __revision__ = '$Format:%H$'
 from qgis.core import QgsProcessingProvider
 
 from .algorithms import (
-    SaveGeosuiteDbCSV,
+    BegrensSkadeExcavation,
+    BegrensSkadeImpactMap,
+    BegrensSkadeTunnel
 )
+
+from .utils.gui import GuiUtils
 
 
 class GeovitaProcessingPluginProvider(QgsProcessingProvider):
@@ -56,7 +60,7 @@ class GeovitaProcessingPluginProvider(QgsProcessingProvider):
         """
         Loads all algorithms belonging to this provider.
         """
-        for alg in [SaveGeosuiteDbCSV]:
+        for alg in [BegrensSkadeExcavation, BegrensSkadeImpactMap, BegrensSkadeTunnel]:
             self.addAlgorithm(alg())
         # add additional algorithms here
         # self.addAlgorithm(MyOtherAlgorithm())
@@ -67,7 +71,7 @@ class GeovitaProcessingPluginProvider(QgsProcessingProvider):
         string should be a unique, short, character only string, eg "qgis" or
         "gdal". This string should not be localised.
         """
-        return 'Geovita'
+        return 'geovita'
 
     def name(self):
         """
@@ -83,7 +87,7 @@ class GeovitaProcessingPluginProvider(QgsProcessingProvider):
         Should return a QIcon which is used for your provider inside
         the Processing toolbox.
         """
-        return QgsProcessingProvider.icon(self)
+        return GuiUtils.get_icon(icon='geovita.ico')
 
     def longName(self):
         """

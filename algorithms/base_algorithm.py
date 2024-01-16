@@ -35,5 +35,5 @@ from qgis.core import (QgsProcessingAlgorithm)
 
 class GvBaseProcessingAlgorithms(QgsProcessingAlgorithm):
     """
-    Base class for SLYR algorithms.
+    Base class for Geovita algorithms.
     """
