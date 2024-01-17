@@ -30,17 +30,8 @@ __copyright__ = '(C) 2022 by DPE'
 
 __revision__ = '$Format:%H$'
 
-import os
-import sys
-import inspect
-
 from qgis.core import QgsProcessingAlgorithm, QgsApplication
 from .geovita_processing_plugin_provider import GeovitaProcessingPluginProvider
-
-cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
-
-if cmd_folder not in sys.path:
-    sys.path.insert(0, cmd_folder)
 
 
 class GeovitaProcessingPluginPlugin(object):

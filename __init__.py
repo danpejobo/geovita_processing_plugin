@@ -26,6 +26,8 @@ __author__ = 'DPE'
 __date__ = '2022-03-02'
 __copyright__ = '(C) 2022 by DPE'
 
+import sys
+from pathlib import Path
 
 # noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name
@@ -34,6 +36,18 @@ def classFactory(iface):  # pylint: disable=invalid-name
     :param iface: A QGIS interface instance.
     :type iface: QgsInterface
     """
-    #
+    # Directory of the current file (__init__.py)
+    plugin_dir = Path(__file__).parent
+    
+    # Add the plugin directory to sys.path if not already there
+    if str(plugin_dir) not in sys.path:
+        sys.path.append(str(plugin_dir))
+
+    # If you need to add the submodule directory to sys.path
+    submodule_dir = plugin_dir / "REMEDY_GIS_RiskTool"
+    if str(submodule_dir) not in sys.path:
+        sys.path.append(str(submodule_dir))
+
+    # Now you can import your main plugin class
     from .geovita_processing_plugin import GeovitaProcessingPluginPlugin
     return GeovitaProcessingPluginPlugin()
