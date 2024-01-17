@@ -36,8 +36,10 @@ from .geovita_processing_plugin_provider import GeovitaProcessingPluginProvider
 
 class GeovitaProcessingPluginPlugin(object):
 
-    def __init__(self):
+    def __init__(self, iface, version):
         self.provider = None
+        self.iface = iface
+        self.version = version
 
     def initProcessing(self):
         """Init Processing provider for QGIS >= 3.8."""

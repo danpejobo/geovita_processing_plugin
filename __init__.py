@@ -26,6 +26,8 @@ __author__ = 'DPE'
 __date__ = '2022-03-02'
 __copyright__ = '(C) 2022 by DPE'
 
+__version__ = "1.0.1"
+
 import sys
 from pathlib import Path
 
@@ -50,4 +52,4 @@ def classFactory(iface):  # pylint: disable=invalid-name
 
     # Now you can import your main plugin class
     from .geovita_processing_plugin import GeovitaProcessingPluginPlugin
-    return GeovitaProcessingPluginPlugin()
+    return GeovitaProcessingPluginPlugin(iface, __version__)
