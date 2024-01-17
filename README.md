@@ -14,7 +14,7 @@ Status
 
 Tools
 =====
-- **REMEDY GIS RiskTool**
+- **REMEDY GIS RiskTool** - These algorithms create a log directory in this location `%user%/Downloads/REMEDY`. For the moment this is hardcoded.
   - `Begrens Skade - Excavation` The Begrens Skade - Excavation algorithm provides a comprehensive analysis of building settlements and risks associated with subsidence and inclination.
   - `Begrens Skade - ImpactMap` The BegrensSkade ImpactMap alorithm calculates both short-term and long-term settlements that occur due to the establishment of a construction pit.
   - `Begrens Skade - Tunnel` The BegrensSkade Tunnel alorithm provides a comprehensive analysis of building settlements and risks associated with subsidence and inclination due to tunnel excavation.
@@ -25,6 +25,8 @@ QGIS Plugin
 This provider functions as a QGIS plugin (for QGIS >= 3.4) and is available via the standard QGIS plugins repository, so you can install it directly from within QGIS itself.
 
 The plugin adds a new group to the Processing Toolbox for "Geovita", containing sub-groups with tools and algorithms to perform different tasks.
+
+If you enconter bugs of any sort, PLEASE concider reporting them through [the bugtracker](https://github.com/danpejobo/geovita_processing_plugin/issues)
 
 Specifications
 ==============
