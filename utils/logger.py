@@ -1,3 +1,18 @@
+"""
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+"""
+
+__author__ = 'DPE'
+__date__ = '2024-01-17'
+__copyright__ = '(C) 2024 by DPE'
+
 import logging.handlers
 from pathlib import Path
 

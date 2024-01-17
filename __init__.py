@@ -23,8 +23,8 @@
 """
 
 __author__ = 'DPE'
-__date__ = '2022-03-02'
-__copyright__ = '(C) 2022 by DPE'
+__date__ = '2024-01-17'
+__copyright__ = '(C) 2024 by DPE'
 
 __version__ = "1.0.1"
 

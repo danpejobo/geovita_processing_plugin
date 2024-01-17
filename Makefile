@@ -3,9 +3,9 @@
 #
 # This plugin adds different geovita processing plugins
 #							 -------------------
-#		begin				: 2022-03-02
+#		begin				: 2024-01-17
 #		git sha				: $Format:%H$
-#		copyright			: (C) 2022 by DPE
+#		copyright			: (C) 2024 by DPE
 #		email				: dpe@geovita.no
 # ***************************************************************************/
 #

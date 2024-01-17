@@ -6,15 +6,15 @@
 name=Geovita GIS Processing provider
 qgisMinimumVersion=3.4
 qgisMaximumVersion=3.99
-description=This plugin adds different Geovita processing plugins
+description=This plugin adds different Geovita custom processing algorithms to QGIS
 version=1.0.1
 author=DPE
 email=dpe@geovita.no
 
-about=Geovita plugin provider. This plugin enables different processing plugins and is under development. Now it implements NGI's REMEDY_GIS_RiskTool to QGIS.
+about=Geovita plugin provider. This plugin enables different processing algorithms and is under development. Now it implements NGI's REMEDY_GIS_RiskTool to QGIS.
 
-tracker=http://bugs
-repository=http://repo
+tracker=https://github.com/danpejobo/geovita_processing_plugin/issues
+repository=https://github.com/danpejobo/geovita_processing_plugin
 # End of mandatory metadata
 
 # Recommended items:
@@ -30,7 +30,7 @@ hasProcessingProvider=yes
 # Tags are comma separated with spaces allowed
 tags=analysis, attribute edit, csv, database, delimitation, digitizing, export, import, point, processing, table, vector, NGI, BegrensSkade, remedy, building, settlements, tunnel, impactmap, excavation, risk, dtm
 
-homepage=http://homepage
+homepage=https://github.com/danpejobo/geovita_processing_plugin
 category=Analysis
 icon=icons/geovita.ico
 # experimental flag
