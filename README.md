@@ -26,7 +26,7 @@ This provider functions as a QGIS plugin (for QGIS >= 3.4) and is available via 
 
 The plugin adds a new group to the Processing Toolbox for "Geovita", containing sub-groups with tools and algorithms to perform different tasks.
 
-If you enconter bugs of any sort, PLEASE concider reporting them through [the bugtracker](https://github.com/danpejobo/geovita_processing_plugin/issues)
+If you enconter bugs of any sort, PLEASE consider reporting them through [the bugtracker at GitHub](https://github.com/danpejobo/geovita_processing_plugin/issues). Everyone benefits!
 
 Specifications
 ==============
