@@ -49,6 +49,17 @@ def classFactory(iface):  # pylint: disable=invalid-name
     submodule_dir = plugin_dir / "REMEDY_GIS_RiskTool"
     if str(submodule_dir) not in sys.path:
         sys.path.append(str(submodule_dir))
+        
+    # The styles are provided in a styles.zip archive. As such it is neccessary to extract them the first time the plugin is loaded
+    styles_dir = plugin_dir / "styles"
+    if not styles_dir.is_dir():
+        import zipfile
+        import os
+        # Ensure the styles directory exists
+        # styles_dir.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(plugin_dir / 'styles.zip', 'r') as zip_ref:
+            zip_ref.extractall(plugin_dir)
+        os.remove(plugin_dir / 'styles.zip')
 
     # Now you can import your main plugin class
     from .geovita_processing_plugin import GeovitaProcessingPluginPlugin
