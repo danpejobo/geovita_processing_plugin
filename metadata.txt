@@ -7,7 +7,7 @@ name=Geovita GIS Processing provider
 qgisMinimumVersion=3.4
 qgisMaximumVersion=3.99
 description=This plugin adds different Geovita custom processing algorithms to QGIS
-version=1.0.1
+version=1.0.2
 author=DPE
 email=dpe@geovita.no
 
@@ -21,7 +21,10 @@ repository=https://github.com/danpejobo/geovita_processing_plugin
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-# changelog=17.01.2024 v.1.0.1
+# changelog=24.01.2024 v.1.0.2
+	- Update a bug in the utility function get_shapefile_as_json_pyqgis, where excavations containing Z/M-dimentions did not process correctly, resulting in an bug in the underlying submodule.
+
+17.01.2024 v.1.0.1
 	-Initial "release" of the QGIS implementation of NGI's REMEDY_GIS_RiskTool
 
 # Tags are comma separated with spaces allowed
