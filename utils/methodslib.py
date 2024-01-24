@@ -39,7 +39,7 @@ def get_shapefile_as_json_pyqgis(layer, logger=None):
         for feature in layer.getFeatures():
             geom = feature.geometry()
             attributes = feature.attributes()
-            geomType = geom.wkbType()
+            geomType = QgsWkbTypes.flatType(geom.wkbType()) # removes Z and M dimentions from the geomtype
 
             feature_dict = {
                 "attributes": {fieldNames[i]: attributes[i] for i in range(len(fieldNames))}
@@ -69,24 +69,25 @@ def get_shapefile_as_json_pyqgis(layer, logger=None):
 
         return {"features": features}
     
-def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, calculation_range, output_resolution, output_folder, context=None, logger=None):
+def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipping_range, output_resolution, output_folder, context=None, logger=None):
     """
-    Processes raster data for excavation polygons: clipping, resampling, and converting to TIFF.
+    Processes raster data for excavation polygons by clipping, resampling, 
+    and converting it to TIFF format, and then returns the path to the processed file.
 
     Parameters:
     - source_excavation_poly (QgsVectorLayer): Polygon layer for excavation areas.
     - dtb_raster_layer (QgsRasterLayer): QGIS Raster layer for processing.
-    - calculation_range (int): Calculation range for adjusting extents.
+    - clipping_range (int): Clipping range for adjusting extents of the excavation.
     - output_resolution (float): Desired output resolution for resampling.
-    - output_folder (str): Folder path for storing output files.
-    - context (QgsProcessingContext): Processing context for managing temporary files. Defaults to None
-    - logger: Logger object for logging messages. Defaults to None
+    - output_folder (Path): Folder path for storing output files, as a Path object.
+    - context (QgsProcessingContext): Processing context for managing temporary files. Defaults to None.
+    - logger: Logger object for logging messages. Defaults to None.
 
     Returns:
-    - str: File path of the processed raster in TIFF format.
+    - Path: Path object of the processed raster in TIFF format.
     """
     # Processing temp folder
-    temp_folder = QgsProcessingContext.temporaryFolder(context) if context else QgsProcessingUtils.tempFolder()
+    temp_folder = Path(QgsProcessingContext.temporaryFolder(context) if context else QgsProcessingUtils.tempFolder())
     
     for feature in source_excavation_poly.getFeatures():
         geom = feature.geometry()
@@ -94,34 +95,35 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, calcu
         raster_extent = dtb_raster_layer.extent()
         
         # Expanding the extent by the specified calculation range
-        polygon_extent.grow(calculation_range)
-        logger.debug(f"POLYGON Extent RAW: {polygon_extent}")
+        polygon_extent.grow(clipping_range)
+        #logger.debug(f"POLYGON Extent RAW: {polygon_extent}")
                
         # Compare and adjust the polygon_extent if it exceeds the raster_extent
-        xmin = max(polygon_extent.xMinimum(), raster_extent.xMinimum())
-        xmax = min(polygon_extent.xMaximum(), raster_extent.xMaximum())
-        ymin = max(polygon_extent.yMinimum(), raster_extent.yMinimum())
-        ymax = min(polygon_extent.yMaximum(), raster_extent.yMaximum())
+        #xmin = max(polygon_extent.xMinimum(), raster_extent.xMinimum())
+        #xmax = min(polygon_extent.xMaximum(), raster_extent.xMaximum())
+        #ymin = max(polygon_extent.yMinimum(), raster_extent.yMinimum())
+        #ymax = min(polygon_extent.yMaximum(), raster_extent.yMaximum())
 
 
         # Calculate the area and determine if clipping of the raster is needed
         # area = polygon_extent.width() * polygon_extent.height()
 
         # Ensure the expanded polygon extent is within the raster extent
-        adjusted_extent = [xmin, ymax, xmax, ymin]  # Format for PROJWIN
-        logger.debug(f"ADJUSTED Extent RAW: {adjusted_extent}")
+        #adjusted_extent = [xmin, ymax, xmax, ymin]  # Format for PROJWIN
+        #logger.debug(f"ADJUSTED Extent RAW: {adjusted_extent}")
         
         # Initialize paths for temporary raster files
         dtb_clip_raster_path = None
         dtb_raster_resample_path = None
         #if float(output_resolution) / area < 10 / 820000:
-        if adjusted_extent != [polygon_extent.xMinimum(), polygon_extent.yMaximum(), polygon_extent.xMaximum(), polygon_extent.yMinimum()]:
+        #if adjusted_extent != [polygon_extent.xMinimum(), polygon_extent.yMaximum(), polygon_extent.xMaximum(), polygon_extent.yMinimum()]:
+        if raster_extent.contains(polygon_extent):
             logger.debug("START raster clipping")
-            dtb_clip_raster_path = Path(temp_folder) / "clip_temp-raster.tif"
+            dtb_clip_raster_path = temp_folder / "clip_temp-raster.tif"
             # Clipping the raster to the modified extent
             processing.run("gdal:cliprasterbyextent", {
                 'INPUT': dtb_raster_layer.source(),
-                'PROJWIN': f"{xmin}, {xmax}, {ymin}, {ymax}", # correct format to pass
+                'PROJWIN': f"{polygon_extent.xMinimum()}, {polygon_extent.xMaximum()}, {polygon_extent.yMinimum()}, {polygon_extent.yMaximum()}", # correct format to pass
                 'NODATA': None,
                 'OPTIONS': '',
                 'DATA_TYPE': 0,  # Use 5 for Float32
@@ -129,9 +131,13 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, calcu
             })
             dtb_raster_layer = QgsRasterLayer(str(dtb_clip_raster_path), "clip_temp-raster")
             logger.debug("DONE raster clipping")
-
+        
+        # Get raster properties (columns and rows count) before resample
+        n_cols = dtb_raster_layer.width()
+        n_rows = dtb_raster_layer.height()
+        logger.info(f"Dtb raster cols and rows before resampling: {n_cols}, {n_rows}")
         # Resampling the raster to the desired output resolution
-        dtb_raster_resample_path = Path(temp_folder) / "resampl_temp-raster.tif"
+        dtb_raster_resample_path = temp_folder / "resampl_temp-raster.tif"
         logger.debug("START raster resampling")
         processing.run("gdal:warpreproject", {
             'INPUT': dtb_raster_layer.source(),
@@ -143,21 +149,21 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, calcu
         dtb_raster_layer = QgsRasterLayer(str(dtb_raster_resample_path), "resampl_temp-raster")
         logger.debug("DONE raster resampling")
 
-        # Get raster properties (columns and rows count)
+        # Get raster properties (columns and rows count) after resample
         n_cols = dtb_raster_layer.width()
         n_rows = dtb_raster_layer.height()
         logger.info(f"Dtb raster cols and rows after resampling: {n_cols}, {n_rows}")
 
         # Convert to TIFF if needed
-        dtb_raster_tiff = output_folder + "/dtb_raster.tif"
-        if not dtb_raster_layer.source().endswith('.tif'):
+        dtb_raster_tiff = output_folder / "dtb_raster.tif"
+        if not dtb_raster_layer.source().endswith(('.tif', '.tiff')): #checks a tuple
             logger.info("START raster to TIFF conversion")
-            QgsRasterFileWriter.writeRasterLayer(dtb_raster_layer, dtb_raster_tiff, "GTiff")
+            QgsRasterFileWriter.writeRasterLayer(dtb_raster_layer, str(dtb_raster_tiff), "GTiff")
             logger.info("DONE raster to TIFF conversion")
         else:
-            dtb_raster_tiff = dtb_raster_layer.source()
+            dtb_raster_tiff = Path(dtb_raster_layer.source())
 
-        # Return the path of the final processed raster file
+        # Return the Path object of the final processed raster file
         return dtb_raster_tiff
     
 def add_layer_to_qgis(layer_path, layer_name, style_path, group_name=None, logger=None):
