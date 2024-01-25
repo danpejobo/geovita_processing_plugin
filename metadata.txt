@@ -24,7 +24,7 @@ hasProcessingProvider=yes
 # changelog=24.01.2024 v.1.0.2
 	- Update a bug in the utility function get_shapefile_as_json_pyqgis, where excavations containing Z/M-dimentions did not process correctly, resulting in an bug in the underlying submodule.
 
-17.01.2024 v.1.0.1
+	17.01.2024 v.1.0.1
 	-Initial "release" of the QGIS implementation of NGI's REMEDY_GIS_RiskTool
 
 # Tags are comma separated with spaces allowed

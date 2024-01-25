@@ -98,7 +98,7 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
     SETTLEMENT_ENUM = ['SETTLEMENT_ENUM', 'Settlement curves']
     enum_settlment = [r'0,5 % av byggegropdybde', r'1 % av byggegropdybde', r'2 % av byggegropdybde', r'3 % av byggegropdybde']
     RASTER_ROCK_SURFACE = ['RASTER_ROCK_SURFACE', "Input raster of depth to bedrock"]
-    CALCULATION_RANGE = ['CALCULATION_RANGE', 'Clip radius [meters] in case of high resolution']
+    CLIPPING_RANGE = ['CLIPPING_RANGE', 'Clip distance in case of high resolution (buffer distance in [meters])']
     POREPRESSURE_ENUM = ['POREPRESSURE_ENUM', 'Pore pressure reduction curves']
     enum_porepressure = ["Lav poretrykksreduksjon", "Middels poretrykksreduksjon", "Høy poretrykksreduksjon"]
     POREPRESSURE_REDUCTION = ['POREPRESSURE_REDUCTION', 'Porepressure reduction [kPa]']
@@ -196,9 +196,9 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         
         #DEFINING ADVANCED PARAMETERS
         param = QgsProcessingParameterNumber(
-                        self.CALCULATION_RANGE[0],
-                        self.tr(f'{self.CALCULATION_RANGE[1]}'),
-                        defaultValue=380
+                        self.CLIPPING_RANGE[0],
+                        self.tr(f'{self.CLIPPING_RANGE[1]}'),
+                        defaultValue=150
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)      
@@ -312,7 +312,7 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         ).postgisSrid()
         self.logger.info(f"PROCESS - Output CRS: {output_proj}")
         
-        calculation_range = self.parameterAsInt(parameters, self.CALCULATION_RANGE[0], context)
+        clipping_range = self.parameterAsInt(parameters, self.CLIPPING_RANGE[0], context)
         porepressure_index = self.parameterAsEnum(
                 parameters,
                 self.POREPRESSURE_ENUM[0],
@@ -347,7 +347,8 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         if source_raster_rock_surface is not None:
             # Get the file path of the raster layer
             path_source_raster_rock_surface = source_raster_rock_surface.source().lower().split('|')[0]
-            self.logger.info(f"PROCESS - Rock raster DTM File path: {path_source_raster_rock_surface}")
+            self.logger.info(f"PROCESS - Original raster File path: {path_source_raster_rock_surface}")
+            feedback.pushInfo(f"PROCESS - Original raster File path: {path_source_raster_rock_surface}")
 
             # Check if the file extension is .tif
             if path_source_raster_rock_surface.endswith('.tif') or path_source_raster_rock_surface.endswith('.tiff'):
@@ -357,13 +358,15 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
                 feedback.reportError("The raster layer is not a TIFF file. Convert it to TIF/TIFF!")
                 return {}
         feedback.pushInfo("PROCESS - Running process_raster_for_impactmap...")
-        path_source_raster_rock_surface = process_raster_for_impactmap(source_excavation_poly=source_excavation_poly,
+        path_processed_raster = process_raster_for_impactmap(source_excavation_poly=source_excavation_poly,
                                                                        dtb_raster_layer=source_raster_rock_surface,
-                                                                       calculation_range=calculation_range,
+                                                                       clipping_range=clipping_range,
                                                                        output_resolution=output_resolution,
-                                                                       output_folder=str(output_folder_path),
+                                                                       output_folder=output_folder_path,
                                                                        context=context,
                                                                        logger=self.logger)
+        self.logger.info(f"PROCESS - Intermediate raster path: {str(path_processed_raster)}")
+        feedback.pushInfo(f"PROCESS - Intermediate raster path: {str(path_processed_raster)}")
         feedback.pushInfo("PROCESS - Done running process_raster_for_impactmap...")
         if bShortterm:
             self.logger.info(f"PROCESS - ######## SHORTTERM ########")
@@ -396,6 +399,26 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         
         feedback.pushInfo("PROCESS - Running mainBegrensSkade_ImpactMap...")
         self.logger.info("PROCESS - Running mainBegrensSkade_ImpactMap...")
+        feedback.pushInfo(f"PROCESS - PARAM excavationJson: {source_excavation_poly_as_json}")
+        feedback.pushInfo(f"PROCESS - PARAM output_ws: {str(output_folder_path)}")
+        feedback.pushInfo(f"PROCESS - PARAM output_name: {feature_name}")
+        feedback.pushInfo(f"PROCESS - PARAM CALCULATION_RANGE: {380}")
+        feedback.pushInfo(f"PROCESS - PARAM output_proj: {output_proj}")
+        feedback.pushInfo(f"PROCESS - PARAM dtb_raster: {str(path_processed_raster)}")
+        feedback.pushInfo(f"PROCESS - PARAM pw_reduction_curve: {pw_reduction_curve}")
+        feedback.pushInfo(f"PROCESS - PARAM dry_crust_thk: {dry_crust_thk}")
+        feedback.pushInfo(f"PROCESS - PARAM dep_groundwater: {dep_groundwater}")
+        feedback.pushInfo(f"PROCESS - PARAM dry_crust_thk: {dry_crust_thk}")
+        feedback.pushInfo(f"PROCESS - PARAM density_sat: {density_sat}")
+        feedback.pushInfo(f"PROCESS - PARAM OCR: {ocr_value}")
+        feedback.pushInfo(f"PROCESS - PARAM porewp_red: {porewp_red}")
+        feedback.pushInfo(f"PROCESS - PARAM janbu_ref_stress: {janbu_ref_stress}")
+        feedback.pushInfo(f"PROCESS - PARAM janbu_const: {janbu_const}")
+        feedback.pushInfo(f"PROCESS - PARAM janbu_m: {janbu_m}")
+        feedback.pushInfo(f"PROCESS - PARAM consolidation_time: {consolidation_time}")
+        feedback.pushInfo(f"PROCESS - PARAM bShortterm: {bShortterm}")
+        feedback.pushInfo(f"PROCESS - PARAM excavation_depth: {excavation_depth}")
+        feedback.pushInfo(f"PROCESS - PARAM short_term_curve: {short_term_curve}")
         
         try:
             output_raster_path  = mainBegrensSkade_ImpactMap(
@@ -403,9 +426,9 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
                 excavationJson=source_excavation_poly_as_json,
                 output_ws=str(output_folder_path),
                 output_name=feature_name,
-                CALCULATION_RANGE=calculation_range,
+                CALCULATION_RANGE=380, # hardcoded constant used in the underlying submodule's method.
                 output_proj=output_proj,
-                dtb_raster=path_source_raster_rock_surface,
+                dtb_raster=str(path_processed_raster),
                 pw_reduction_curve=pw_reduction_curve,
                 dry_crust_thk=dry_crust_thk,
                 dep_groundwater=dep_groundwater,
