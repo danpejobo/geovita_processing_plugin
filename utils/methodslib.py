@@ -19,11 +19,16 @@ from qgis.core import (QgsProject,
                        QgsRasterFileWriter, 
                        QgsRasterLayer,
                        QgsVectorLayer,
+                       QgsProcessingContext,
+                       QgsProcessingFeedback,
+                       QgsCoordinateReferenceSystem,
                        QgsLayerTreeGroup,
-                       QgsProcessingContext)
+                       QgsLayerTreeLayer)
+
 from qgis import processing
-from osgeo import gdal
 from pathlib import Path
+from typing import Union
+import shutil
 
 def get_shapefile_as_json_pyqgis(layer, logger=None):
         if logger is not None:
@@ -183,10 +188,10 @@ def add_layer_to_qgis(layer_path, layer_name, style_path, group_name=None, logge
 
     # Determine layer type (raster or vector) based on file extension
     if layer_path.endswith('.tif') or layer_path.endswith('.tiff'):
-        layer = QgsRasterLayer(layer_path, f'{layer_name}_{group_name}')
+        layer = QgsRasterLayer(layer_path, f'{layer_name}')
         logger.info(f"Loaded RASTER layer to style it: {layer}")
     else:
-        layer = QgsVectorLayer(layer_path, f'{layer_name}_{group_name}', 'ogr')
+        layer = QgsVectorLayer(layer_path, f'{layer_name}', 'ogr')
         logger.info(f"Loaded VECTOR layer to style it: {layer}")
 
     if not layer.isValid():
@@ -206,11 +211,16 @@ def add_layer_to_qgis(layer_path, layer_name, style_path, group_name=None, logge
     if group_name:
         group = root.findGroup(group_name)
         if not group:
-            group = root.insertGroup(0, group_name)
-            logger.info(f"Created group: {group_name}")
+            #group = root.insertGroup(0, group_name)
+            group = QgsLayerTreeGroup(group_name)
+            root.insertChildNode(0, group)
+            logger.info(f"Created group node with name: {group.name()}")
+
         QgsProject.instance().addMapLayer(layer, False)  # False means do not add to the layer tree root
-        group.addLayer(layer)
-        logger.info(f"Added {layer} to group: {group_name}")
+        node_layer = QgsLayerTreeLayer(layer)
+        group.insertChildNode(1, node_layer)
+        #group.addLayer(layer)
+        logger.info(f"Added {layer} to group: {group.name()}")
     else:
         QgsProject.instance().addMapLayer(layer, True)  # Add layer directly to the layer tree
         logger.info(f"No group prensen. Directly add layer: {layer}")
@@ -243,3 +253,127 @@ def map_porepressure_curve_names(curve_name):
                         'Manual': 'Manuell'
                         }
         return mapping_dict.get(curve_name, None)
+
+def reproject_if_needed(layer: Union[QgsVectorLayer, QgsRasterLayer], 
+                        output_crs: QgsCoordinateReferenceSystem):
+    """Checks the layers CRS agains the specified output_crs, and return True if they match, False otherwise.
+
+    Args:
+        layer (Union[QgsVectorLayer, QgsRasterLayer]): The specified layer, can either be a vector or raster layer.
+        output_crs (QgsCoordinateReferenceSystem): The output coordinate system.
+
+    Returns:
+        Bool: True if reprojection is not needed, False if reprojection is needed
+    """
+    if layer.crs() != output_crs:
+        return False
+    else:
+        return True
+    
+def reproject_layers(keep_interm_layer: bool,
+                     output_crs: QgsCoordinateReferenceSystem, 
+                     output_folder: Path, 
+                     vector_layer: QgsVectorLayer = None,
+                     raster_layer: QgsRasterLayer = None, 
+                     context: QgsProcessingContext = None, 
+                     logger = None):
+    """
+    Reprojects vector and optionally raster layers to a specified CRS.
+
+    Args:
+    - keep_interm_layer (bool): Save the reprojected layers in the output directory
+    - output_crs (QgsCoordinateReferenceSystem): The desired output CRS.
+    - output_folder (Path): The folder path where the reprojected layers will be saved.
+    - vector_layer (QgsVectorLayer, optional): The vector layer to be reprojected, or None if not applicable.
+    - raster_layer (QgsRasterLayer, optional): The raster layer to be reprojected, or None if not applicable.
+    - context (QgsProcessingContext, optional): The context for processing. Default is None.
+    - logger (logging.Logger, optional): Logger for logging messages. Default is None.
+
+    Returns:
+    - Tuple: (reprojected_vector_path, reprojected_raster_path) Paths to the reprojected layers.
+    """
+    # Processing temp folder
+    temp_folder = Path(QgsProcessingContext.temporaryFolder(context) if context else QgsProcessingUtils.tempFolder())
+
+    # Prepare processing context and feedback
+    if not context:
+        context = QgsProcessingContext()
+    feedback = context.feedback() if context else QgsProcessingFeedback()
+    
+    # Initialize reprojected layer variables
+    reprojected_vector_layer = None
+    reprojected_raster_layer = None
+
+    # Reproject vector layer
+    if vector_layer is not None:
+        feedback.pushInfo(f"Vector layer to reproject: Valid: {vector_layer.isValid()}, Name: {vector_layer.name()}, Source: {vector_layer.source()}")
+        reprojected_vector_path = temp_folder / f"reprojected_{vector_layer.name()}.shp"
+        processing.run("native:reprojectlayer", {
+            'INPUT': vector_layer,
+            'TARGET_CRS': output_crs,
+            'OUTPUT': str(reprojected_vector_path)
+        }, context=context, feedback=feedback)
+        
+        # Determine the final path based on the keep_interm_layer flag
+        final_vector_path = output_folder / f"reprojected_{vector_layer.name()}.shp" if keep_interm_layer else reprojected_vector_path
+        if keep_interm_layer:
+            move_file_components(reprojected_vector_path, final_vector_path)
+            
+        reprojected_vector_layer = QgsVectorLayer(str(final_vector_path), f"reprojected_{vector_layer.name()}.shp", 'ogr')
+        if not reprojected_vector_layer.isValid():
+            raise Exception(f"Failed to load reprojected vector layer from {final_vector_path}")
+        feedback.pushInfo(f"VECTOR layer reprojected and saved to {final_vector_path}, NEW CRS: {reprojected_vector_layer.crs().postgisSrid()}")
+        if logger:
+            logger.info(f"VECTOR layer reprojected and saved to {final_vector_path}")
+                  
+    # Reproject raster layer if provided
+    if raster_layer is not None:
+        feedback.pushInfo(f"Raster layer to reproject: Valid: {raster_layer.isValid()}, Name: {raster_layer.name()}.tif, Source: {raster_layer.source()}")
+        reprojected_raster_path = temp_folder / f"reprojected_{raster_layer.name()}.tif"
+        processing.run("gdal:warpreproject", {
+            'INPUT': raster_layer.source(),
+            'SOURCE_CRS': raster_layer.crs().authid(),
+            'TARGET_CRS': output_crs,
+            'OUTPUT': str(reprojected_raster_path)
+        }, context=context, feedback=feedback)
+        
+        # Save the reprojected raster layer to the output folder, else return the temporary interm. layer
+        final_raster_path = output_folder / f"reprojected_{raster_layer.name()}.tif" if keep_interm_layer else reprojected_raster_path
+        if keep_interm_layer:
+            move_file_components(reprojected_raster_path, final_raster_path)
+        reprojected_raster_layer = QgsRasterLayer(str(final_raster_path), f"reprojected_{raster_layer.name()}.tif")
+        if not reprojected_raster_layer.isValid():
+            raise Exception(f"Failed to load reprojected raster layer from {final_raster_path}")
+        feedback.pushInfo(f"RASTER layer reprojected and saved to {final_raster_path}, NEW CRS: {reprojected_raster_layer.crs().postgisSrid()}")
+        if logger:
+            logger.info(f"RASTER layer reprojected and saved to {final_raster_path}")       
+
+    return reprojected_vector_layer, reprojected_raster_layer
+
+def move_file_components(original_file_path: Path, destination_file_path: Path):
+    """
+    Moves all components of a Shapefile or a TIFF file to a specified destination folder.
+    
+    Args:
+    - original_file_path (pathlib.Path): The full path to any component of the Shapefile or TIFF file.
+    - destination_file_path (pathlib.Path): The full destination file path where the file components should be moved.
+    """
+    file_extension = original_file_path.suffix.lower()
+    destination_folder = destination_file_path.parent
+    destination_base_name = destination_file_path.stem
+
+    if file_extension in ['.shp', '.shx', '.dbf', '.prj', '.cpg', '.qpj']:
+        # Handle Shapefile components
+        extensions = ['.shp', '.shx', '.dbf', '.prj', '.cpg', '.qpj']
+    elif file_extension in ['.tif', '.tiff']:
+        # Handle TIFF and associated files (including .aux.xml and .tfw)
+        extensions = ['.tif', '.tiff', '.tfw', '.tif.aux.xml', '.tiff.aux.xml']
+    else:
+        raise ValueError("Unsupported file format")
+
+    # Iterate over the file extensions and move each file
+    for ext in extensions:
+        src_file = original_file_path.with_suffix(ext)
+        dest_file = destination_folder / (destination_base_name + ext)
+        if src_file.exists():
+            shutil.move(str(src_file), str(dest_file))

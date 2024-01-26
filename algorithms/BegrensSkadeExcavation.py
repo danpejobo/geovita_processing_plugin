@@ -30,29 +30,25 @@ __copyright__ = '(C) 2023 by DPE'
 
 __revision__ = '$Format:%H$'
 
-from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtCore import QCoreApplication, pyqtSignal, QEventLoop
 from qgis.core import (Qgis,
+                       QgsApplication,
                        QgsProject,
                        QgsProcessing,
-                       QgsFeatureSink,
-                       QgsVectorLayer,
-                       QgsWkbTypes,
                        QgsProcessingParameterDefinition,
                        QgsProcessingParameterBoolean,
                        QgsProcessingParameterFeatureSource,
-                       QgsProcessingParameterFeatureSink,
                        QgsProcessingParameterRasterLayer,
-                       QgsProcessingParameterMultipleLayers,
                        QgsProcessingParameterFolderDestination,
                        QgsProcessingParameterCrs,
                        QgsProcessingParameterString,
                        QgsProcessingParameterNumber,
                        QgsProcessingParameterEnum,
-                       QgsProcessingParameterExpression,
                        QgsProcessingParameterField,
-                       QgsJsonExporter,
-                       QgsMessageLog)
-
+                       QgsMessageLog,
+                       QgsTask,
+                       QgsProcessingException,
+                       )
 
 import traceback
 from pathlib import Path
@@ -60,11 +56,80 @@ from pathlib import Path
 from .base_algorithm import GvBaseProcessingAlgorithms
 from ..utils.gui import GuiUtils
 from ..utils.logger import CustomLogger
-from ..utils.methodslib import get_shapefile_as_json_pyqgis, add_layer_to_qgis
+from ..utils.methodslib import get_shapefile_as_json_pyqgis, add_layer_to_qgis, reproject_if_needed, reproject_layers
 
-from ..REMEDY_GIS_RiskTool import Utils
-from ..REMEDY_GIS_RiskTool import BegrensSkade
 from ..REMEDY_GIS_RiskTool.BegrensSkade import mainBegrensSkade_Excavation
+
+class AddLayersTask(QgsTask):
+    """
+    A QGIS task for adding layers to the QGIS interface. This task handles layer additions 
+    in a background thread and updates the GUI in the main thread upon completion.
+
+    Attributes:
+        taskCompleted (pyqtSignal): Signal emitted when the task is completed.
+        layers_info (list): A list of tuples containing layer information (name, path, style).
+        feature_name (str): The name of the feature to which layers are related.
+        styles_dir_path (Path): The directory path where style files are located.
+        logger (Logger): Logger for logging messages.
+        completed (bool): Flag indicating whether the task has completed.
+    """
+
+    taskCompleted = pyqtSignal(bool)
+
+    def __init__(self, description, layers_info, feature_name, styles_dir_path, logger):
+        """
+        Initializes the AddLayersTask.
+
+        Args:
+            description (str): The description of the task.
+            layers_info (list): A list of tuples containing layer information (name, path, style).
+            feature_name (str): The name of the feature to which layers are related.
+            styles_dir_path (Path): The directory path where style files are located.
+            logger (Logger): Logger for logging messages.
+        """
+        super().__init__(description, QgsTask.CanCancel)
+        self.layers_info = layers_info
+        self.feature_name = feature_name
+        self.styles_dir_path = styles_dir_path
+        self.logger = logger
+        self.completed = False
+
+    def run(self):
+        """
+        The method that runs when the task is started. It should be used for 
+        non-GUI operations such as data preparation and validation.
+
+        Returns:
+            bool: True if preparation is successful, False otherwise.
+        """
+        for layer_name, shapefile_path, style_name in self.layers_info:
+            # Validate file paths
+            if not Path(shapefile_path).is_file():
+                self.logger.error(f"File not found: {shapefile_path}")
+                return False
+            # Log information about the layers to be added
+            self.logger.info(f"Preparing to add layer: {layer_name}")
+        return True
+
+    def finished(self, success):
+        """
+        The method that runs when the task is finished. It is executed in the main thread,
+        making it safe for GUI operations like adding layers and refreshing the layer tree.
+
+        Args:
+            success (bool): Indicates whether the task preparation was successful.
+        """
+        if success:
+            # GUI operations are performed here
+            for layer_name, shapefile_path, style_name in self.layers_info:
+                style_path = str(self.styles_dir_path / style_name)
+                if not add_layer_to_qgis(shapefile_path, layer_name, style_path, self.feature_name, self.logger):
+                    self.logger.error(f"Failed to add layer {layer_name}")
+                    self.taskCompleted.emit(False)
+                    return
+
+        self.completed = True
+        self.taskCompleted.emit(success)
 
 
 class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
@@ -98,6 +163,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
     
     INPUT_BUILDING_POLY = 'INPUT_BUILDING_POLY'
     INPUT_EXCAVATION_POLY = 'INPUT_EXCAVATION_POLY'
+    INTERMEDIATE_LAYERS = ['INTERMEDIATE_LAYERS', 'Keep intermediate layers?']
     
     SHORT_TERM_SETTLEMENT = ['SHORT_TERM_SETTLEMENT', 'Short term settlements']
     EXCAVATION_DEPTH = ['EXCAVATION_DEPTH', 'Depth of excavation [m]']
@@ -378,6 +444,12 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
                 defaultValue=QgsProject.instance().crs(),
             )
         )
+        param = QgsProcessingParameterBoolean(
+                        self.INTERMEDIATE_LAYERS[0],
+                        self.tr(f'{self.INTERMEDIATE_LAYERS[1]}'),
+                        defaultValue=False
+                    )
+        self.addParameter(param)
         self.addParameter(
             QgsProcessingParameterFolderDestination(
                 self.OUTPUT_FOLDER,
@@ -416,42 +488,60 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
             self.VULNERABILITY_ANALYSIS[0],
             context
         )
-        feedback.setProgress(10)
         self.logger.info(f"PROCESS - bVulnerability value: {bVulnerability}")
+        
+        bIntermediate = self.parameterAsBoolean(
+            parameters,
+            self.INTERMEDIATE_LAYERS[0],
+            context
+        )
+        feedback.setProgress(10)
+        self.logger.info(f"PROCESS - bIntermediate value: {bIntermediate}")
         
         source_building_poly = self.parameterAsVectorLayer(
             parameters,
             self.INPUT_BUILDING_POLY,
             context
         )
-        path_source_building_poly = source_building_poly.source().split('|')[0]
-        self.logger.info(f"PROCESS - Path to source buildings: {path_source_building_poly}")
         
         source_excavation_poly = self.parameterAsVectorLayer(
             parameters,
             self.INPUT_EXCAVATION_POLY,
             context
         )
-        path_source_excavation_poly = source_excavation_poly.source().split('|')[0]
-        self.logger.info(f"PROCESS - Path to source excavation: {path_source_excavation_poly}")
         
-        source_excavation_poly_as_json = get_shapefile_as_json_pyqgis(source_excavation_poly, self.logger)
-        #source_excavation_poly_as_json = Utils.getShapefileAsJson(path_source_excavation_poly, logger)
-        self.logger.info(f"PROCESS - JSON structure: {source_excavation_poly_as_json}")
-        
-        source_raster_rock_surface = self.parameterAsRasterLayer(
-                    parameters,
-                    self.RASTER_ROCK_SURFACE[0],
-                    context
-                )
+        source_raster_rock_surface = self.parameterAsRasterLayer(parameters, self.RASTER_ROCK_SURFACE[0], context )
         self.logger.info(f"PROCESS - Rock raster DTM: {source_raster_rock_surface}")
+        
+        output_folder = self.parameterAsString(parameters, self.OUTPUT_FOLDER, context)
+        # Ensure the output directory exists
+        output_folder_path = Path(output_folder)
+        output_folder_path.mkdir(parents=True, exist_ok=True)
+        
+        self.logger.info(f"PROCESS - Output folder: {output_folder}")
+        
+        feature_name = self.parameterAsString(parameters, self.OUTPUT_FEATURE_NAME, context)
+        self.logger.info(f"PROCESS - Feature name: {feature_name}")
+        
+        output_proj = self.parameterAsCrs(parameters, self.OUTPUT_CRS, context)
+        output_srid = output_proj.postgisSrid()
+        self.logger.info(f"PROCESS - Output CRS(SRID): {output_srid}")
+        feedback.setProgress(20)
         
         ############### HANDELING OF INPUT RASTER ################
         if source_raster_rock_surface is not None:
+            ############### RASTER REPROJECT ################
+            if not reproject_if_needed(source_raster_rock_surface, output_proj):
+                feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_raster_rock_surface.name()}, ORIGINAL CRS: {source_raster_rock_surface.crs().postgisSrid()}")
+                try:
+                    _, source_raster_rock_surface = reproject_layers(bIntermediate, output_proj, output_folder_path, None, source_raster_rock_surface, context=context, logger=self.logger)
+                except Exception as e:
+                    feedback.reportError(f"Error during reprojection of RASTER LAYER: {e}")
+                    return {}
+            
             # Get the file path of the raster layer
             path_source_raster_rock_surface = source_raster_rock_surface.source().lower().split('|')[0]
             self.logger.info(f"PROCESS - Rock raster DTM File path: {path_source_raster_rock_surface}")
-
             # Check if the file extension is .tif
             if path_source_raster_rock_surface.endswith('.tif') or path_source_raster_rock_surface.endswith('.tiff'):
                 feedback.pushInfo("The raster layer is a TIFF file.")
@@ -460,31 +550,36 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
                 feedback.reportError("The raster layer is not a TIFF file. Convert it to TIF/TIFF!")
                 return {}
         
-        output_folder = self.parameterAsString(
-                parameters,
-                self.OUTPUT_FOLDER,
-                context
-            )
-        # Ensure the output directory exists
-        output_folder_path = Path(output_folder)
-        output_folder_path.mkdir(parents=True, exist_ok=True)
         
-        self.logger.info(f"PROCESS - Output folder: {output_folder}")
+        #################  CHECK INPUT PROJECTIONS OF VECTOR LAYERS #################
         
-        feature_name = self.parameterAsString(
-                parameters,
-                self.OUTPUT_FEATURE_NAME,
-                context
-            )
-        self.logger.info(f"PROCESS - Feature name: {feature_name}")
+        # Check if each layer matches the output CRS --> If False is returned, reproject the layers.
+        if not reproject_if_needed(source_building_poly, output_proj):
+            feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_building_poly.name()}, ORIGINAL CRS: {source_building_poly.crs().postgisSrid()}")
+            try:
+                source_building_poly, _ = reproject_layers(bIntermediate, output_proj, output_folder_path, source_building_poly, None, context=context, logger=self.logger)
+            except Exception as e:
+                feedback.reportError(f"Error during reprojection of BUILDINGS: {e}")
+                return {}
+        if not reproject_if_needed(source_excavation_poly, output_proj):
+            feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_excavation_poly.name()}, ORIGINAL CRS: {source_excavation_poly.crs().postgisSrid()}")
+            try:
+                source_excavation_poly, _ = reproject_layers(bIntermediate, output_proj, output_folder_path, source_excavation_poly, None, context=context, logger=self.logger)
+            except Exception as e:
+                feedback.reportError(f"Error during reprojection of EXCAVATION: {e}")
+                return {}
         
-        output_proj = self.parameterAsCrs(
-            parameters,
-            self.OUTPUT_CRS,
-            context
-        ).postgisSrid()
-        self.logger.info(f"PROCESS - Output CRS: {output_proj}")
-        feedback.setProgress(20)
+        path_source_building_poly = source_building_poly.source().split('|')[0]
+        self.logger.info(f"PROCESS - Path to source buildings: {path_source_building_poly}")
+        
+        path_source_excavation_poly = source_excavation_poly.source().split('|')[0]
+        self.logger.info(f"PROCESS - Path to source excavation: {path_source_excavation_poly}")
+        
+        source_excavation_poly_as_json = get_shapefile_as_json_pyqgis(source_excavation_poly, self.logger)
+        #source_excavation_poly_as_json = Utils.getShapefileAsJson(path_source_excavation_poly, logger)
+        self.logger.info(f"PROCESS - JSON structure: {source_excavation_poly_as_json}")
+            
+        feedback.setProgress(30)
         if not bShortterm and not bLongterm:
             error_msg = "Please choose Short term or Long term settlements, or both"
             self.logger.error(error_msg)
@@ -557,31 +652,31 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
             foundation_field = None
             structure_field = None
             status_field = None
-        
-#################  CHECK INPUT PROJECTIONS #################
-        feedback.setProgress(30)
-        # Get the CRS for the vector layers
-        crs_building = source_building_poly.crs()
-        crs_excavation = source_excavation_poly.crs()
-        
-        if source_raster_rock_surface is not None:
-            crs_raster = source_raster_rock_surface.crs()
-            # Compare the CRS of all layers
-            if crs_building == crs_excavation == crs_raster:
-                feedback.pushInfo("All layers have the same projection.")
-            else:
-                feedback.reportError("The layers have different projections. Reproject the layers to the same CRS!")
-                return {}
-        else:
-            # Compare the CRS of only the vector layers
-            if crs_building == crs_excavation:
-                feedback.pushInfo("Vector layers have the same projection.")
-            else:
-                feedback.reportError("The vector layers have different projections. Reproject the layers to the same CRS!")
-                return {}
-        
+                
         feedback.pushInfo("PROCESS - Running mainBegrensSkade_Excavation...")
         self.logger.info("PROCESS - Running mainBegrensSkade_Excavation...")
+        feedback.pushInfo(f"PROCESS - Param: buildingsFN = {path_source_building_poly}")
+        feedback.pushInfo(f"PROCESS - Param: excavationJson = {source_excavation_poly_as_json}")
+        feedback.pushInfo(f"PROCESS - Param: Output folder = {output_folder}")
+        feedback.pushInfo(f"PROCESS - Param: feature_name = {feature_name}")
+        feedback.pushInfo(f"PROCESS - Param: output_proj = {output_srid}")
+        feedback.pushInfo(f"PROCESS - Param: bShortterm = {bShortterm}")
+        feedback.pushInfo(f"PROCESS - Param: excavation_depth = {excavation_depth}")
+        feedback.pushInfo(f"PROCESS - Param: short_term_curve = {short_term_curve}")
+        feedback.pushInfo(f"PROCESS - Param: bLongterm = {bLongterm}")
+        feedback.pushInfo(f"PROCESS - Param: dtb_raster = {path_source_raster_rock_surface}")
+        feedback.pushInfo(f"PROCESS - Param: pw_reduction_curve = {pw_reduction_curve}")
+        feedback.pushInfo(f"PROCESS - Param: dry_crust_thk = {dry_crust_thk}")
+        feedback.pushInfo(f"PROCESS - Param: density_sat = {density_sat}")
+        feedback.pushInfo(f"PROCESS - Param: porewp_red = {porewp_red}")
+        feedback.pushInfo(f"PROCESS - Param: janbu_ref_stress = {janbu_ref_stress}")
+        feedback.pushInfo(f"PROCESS - Param: janbu_const = {janbu_const}")
+        feedback.pushInfo(f"PROCESS - Param: janbu_m = {janbu_m}")
+        feedback.pushInfo(f"PROCESS - Param: consolidation_time = {consolidation_time}")
+        feedback.pushInfo(f"PROCESS - Param: bVulnerability = {bVulnerability}")
+        feedback.pushInfo(f"PROCESS - Param: fieldNameFoundation = {foundation_field}")
+        feedback.pushInfo(f"PROCESS - Param: fieldNameStructure = {structure_field}")
+        feedback.pushInfo(f"PROCESS - Param: fieldNameStatus = {status_field}")
         feedback.setProgress(50)
         try:
             output_shapefiles = mainBegrensSkade_Excavation(
@@ -590,7 +685,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
                 excavationJson=source_excavation_poly_as_json,
                 output_ws=output_folder,
                 feature_name=feature_name,
-                output_proj=output_proj,
+                output_proj=output_srid,
                 bShortterm=bShortterm,
                 excavation_depth=excavation_depth,
                 short_term_curve=short_term_curve,
@@ -642,15 +737,41 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
                 ("BUILDING-RISK-ANGLE", output_shapefiles[0], "BUILDING-TOTAL-RISK-ANGLE_risk_angle.qml")
             ])
 
-        # Loop through each layer and add it to the project
-        for layer_name, shapefile_path, style_name in layers_info:
-            style_path = str(Path(styles_dir_path) / style_name)
-            success = add_layer_to_qgis(shapefile_path, layer_name, style_path, feature_name, self.logger)
+        # # Loop through each layer and add it to the project
+        # for layer_name, shapefile_path, style_name in layers_info:
+        #     style_path = str(Path(styles_dir_path) / style_name)
+        #     success = add_layer_to_qgis(shapefile_path, layer_name, style_path, feature_name, self.logger)
 
+        #     if success:
+        #         feedback.pushInfo(f"RESULTS - {layer_name} added successfully with style to group {feature_name}.")
+        #     else:
+        #         feedback.reportError(f"RESULTS - Failed to add layer {layer_name}")
+        
+        # EXPERIMENTAL ADD LAYERS TO GUI
+        # Create the task
+        add_layers_task = AddLayersTask("Add Layers", layers_info, feature_name, styles_dir_path, self.logger)
+        # Local event loop
+        loop = QEventLoop()
+        # Define a slot to handle the task completion
+        def onTaskCompleted(success):
             if success:
-                feedback.pushInfo(f"RESULTS - {layer_name} added successfully with style to group {feature_name}.")
+                feedback.pushInfo("Layers added successfully.")
             else:
-                feedback.reportError(f"RESULTS - Failed to add layer {layer_name}")
+                feedback.reportError("Failed to add layers.")
+            loop.quit()  # Quit the event loop
+            
+        # Connect the task's completed signal to the slot
+        add_layers_task.taskCompleted.connect(onTaskCompleted)
+
+        # Start the task
+        QgsApplication.taskManager().addTask(add_layers_task)
+        # Start the event loop
+        loop.exec_()
+
+        # Check if the task was successful
+        if not add_layers_task.completed:
+            raise QgsProcessingException("Error occurred while adding layers.")
+        
         feedback.setProgress(100)
         feedback.pushInfo(f"RESULTS - Finished adding results!")
         return {

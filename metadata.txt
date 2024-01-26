@@ -11,7 +11,14 @@ version=1.0.2
 author=DPE
 email=dpe@geovita.no
 
-about=Geovita plugin provider. This plugin enables different processing algorithms and is under development. Now it implements NGI's REMEDY_GIS_RiskTool to QGIS. File bug-reports here: https://github.com/danpejobo/geovita_processing_plugin/issues
+about=Geovita plugin provider. This plugin enables different processing algorithms and is under development.
+
+	Now it implements NGI's REMEDY_GIS_RiskTool to QGIS:
+	* Begrens Skade - Excavation: The Begrens Skade - Excavation algorithm provides a comprehensive analysis of building settlements and risks associated with subsidence and inclination.
+	* Begrens Skade - ImpactMap: The BegrensSkade ImpactMap alorithm calculates both short-term and long-term settlements that occur due to the establishment of a construction pit (this alg. takes a bit of time to run, open the log and refresh it to see the logged progress).
+	* Begrens Skade - Tunnel: The BegrensSkade Tunnel alorithm provides a comprehensive analysis of building settlements and risks associated with subsidence and inclination due to tunnel excavation.
+
+	- File bug-reports here: https://github.com/danpejobo/geovita_processing_plugin/issues
 
 tracker=https://github.com/danpejobo/geovita_processing_plugin/issues
 repository=https://github.com/danpejobo/geovita_processing_plugin
@@ -21,11 +28,11 @@ repository=https://github.com/danpejobo/geovita_processing_plugin
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-# changelog=24.01.2024 v.1.0.2
-	- Update a bug in the utility function get_shapefile_as_json_pyqgis, where excavations containing Z/M-dimentions did not process correctly, resulting in an bug in the underlying submodule.
+changelog=v.1.0.2 (24.01.2024)
+	- Update a bug in the utility function get_shapefile_as_json_pyqgis, where excavations containing Z/M-dimentions (they are dropped) did not process correctly, resulting in an bug in the underlying submodule.
 
-	17.01.2024 v.1.0.1
-	-Initial "release" of the QGIS implementation of NGI's REMEDY_GIS_RiskTool
+	v.1.0.1 (17.01.2024)
+	- Initial "release" of the QGIS implementation of NGI's REMEDY_GIS_RiskTool
 
 # Tags are comma separated with spaces allowed
 tags=analysis, attribute edit, csv, database, delimitation, digitizing, export, import, point, processing, table, vector, NGI, BegrensSkade, remedy, building, settlements, tunnel, impactmap, excavation, risk, dtm
