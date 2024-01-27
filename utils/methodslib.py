@@ -23,7 +23,8 @@ from qgis.core import (QgsProject,
                        QgsProcessingFeedback,
                        QgsCoordinateReferenceSystem,
                        QgsLayerTreeGroup,
-                       QgsLayerTreeLayer)
+                       QgsLayerTreeLayer,
+                       QgsRectangle)
 
 from qgis import processing
 from pathlib import Path
@@ -94,13 +95,19 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipp
     # Processing temp folder
     temp_folder = Path(QgsProcessingContext.temporaryFolder(context) if context else QgsProcessingUtils.tempFolder())
     
+    # Prepare processing context and feedback
+    if not context:
+        context = QgsProcessingContext()
+    feedback = context.feedback() if context else QgsProcessingFeedback()
+    
     for feature in source_excavation_poly.getFeatures():
         geom = feature.geometry()
         polygon_extent = geom.boundingBox() # Returns a QgsRectangle of the polygon feature
         raster_extent = dtb_raster_layer.extent()
         
-        # Expanding the extent by the specified calculation range
-        polygon_extent.grow(clipping_range)
+        # Adjust the polygon extent using the intersected extent
+        adjusted_polygon_extent = get_intersected_extent(polygon_extent, raster_extent, clipping_range)
+
         #logger.debug(f"POLYGON Extent RAW: {polygon_extent}")
                
         # Compare and adjust the polygon_extent if it exceeds the raster_extent
@@ -118,29 +125,32 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipp
         #logger.debug(f"ADJUSTED Extent RAW: {adjusted_extent}")
         
         # Initialize paths for temporary raster files
-        dtb_clip_raster_path = None
+        #dtb_clip_raster_path = None
         dtb_raster_resample_path = None
         #if float(output_resolution) / area < 10 / 820000:
         #if adjusted_extent != [polygon_extent.xMinimum(), polygon_extent.yMaximum(), polygon_extent.xMaximum(), polygon_extent.yMinimum()]:
-        if raster_extent.contains(polygon_extent):
-            logger.debug("START raster clipping")
-            dtb_clip_raster_path = temp_folder / "clip_temp-raster.tif"
-            # Clipping the raster to the modified extent
-            processing.run("gdal:cliprasterbyextent", {
-                'INPUT': dtb_raster_layer.source(),
-                'PROJWIN': f"{polygon_extent.xMinimum()}, {polygon_extent.xMaximum()}, {polygon_extent.yMinimum()}, {polygon_extent.yMaximum()}", # correct format to pass
-                'NODATA': None,
-                'OPTIONS': '',
-                'DATA_TYPE': 0,  # Use 5 for Float32
-                'OUTPUT': str(dtb_clip_raster_path)
-            })
-            dtb_raster_layer = QgsRasterLayer(str(dtb_clip_raster_path), "clip_temp-raster")
-            logger.debug("DONE raster clipping")
+        #if raster_extent.contains(polygon_extent):
+        logger.debug("START raster clipping")
+        feedback.pushInfo("PROCESS - @process_raster_for_impactmap@ --> Start clipping")
+        dtb_clip_raster_path = temp_folder / "clip_temp-raster.tif"
+        # Clipping the raster to the modified extent
+        processing.run("gdal:cliprasterbyextent", {
+            'INPUT': dtb_raster_layer.source(),
+            'PROJWIN': f"{adjusted_polygon_extent.xMinimum()}, {adjusted_polygon_extent.xMaximum()}, {adjusted_polygon_extent.yMinimum()}, {adjusted_polygon_extent.yMaximum()}", # correct format to pass
+            'NODATA': None,
+            'OPTIONS': '',
+            'DATA_TYPE': 0,  # Use 5 for Float32
+            'OUTPUT': str(dtb_clip_raster_path)
+        })
+        dtb_raster_layer = QgsRasterLayer(str(dtb_clip_raster_path), "clip_temp-raster")
+        logger.debug("DONE raster clipping")
+        feedback.pushInfo("PROCESS - @process_raster_for_impactmap@ --> Done clipping")
         
         # Get raster properties (columns and rows count) before resample
         n_cols = dtb_raster_layer.width()
         n_rows = dtb_raster_layer.height()
         logger.info(f"Dtb raster cols and rows before resampling: {n_cols}, {n_rows}")
+        feedback.pushInfo(f"Dtb raster cols and rows before resampling: {n_cols}, {n_rows}")
         # Resampling the raster to the desired output resolution
         dtb_raster_resample_path = temp_folder / "resampl_temp-raster.tif"
         logger.debug("START raster resampling")
@@ -148,7 +158,7 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipp
             'INPUT': dtb_raster_layer.source(),
             'TARGET_CRS': dtb_raster_layer.crs().authid(),
             'RESAMPLING': 0,  # 0 for Nearest Neighbour
-            'CELLSIZE': output_resolution,
+            'TARGET_RESOLUTION': output_resolution,
             'OUTPUT': str(dtb_raster_resample_path)
         })
         dtb_raster_layer = QgsRasterLayer(str(dtb_raster_resample_path), "resampl_temp-raster")
@@ -158,6 +168,7 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipp
         n_cols = dtb_raster_layer.width()
         n_rows = dtb_raster_layer.height()
         logger.info(f"Dtb raster cols and rows after resampling: {n_cols}, {n_rows}")
+        feedback.pushInfo(f"Dtb raster cols and rows after resampling: {n_cols}, {n_rows}")
 
         # Convert to TIFF if needed
         dtb_raster_tiff = output_folder / "dtb_raster.tif"
@@ -170,6 +181,30 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipp
 
         # Return the Path object of the final processed raster file
         return dtb_raster_tiff
+
+def get_intersected_extent(polygon_extent, raster_extent, clipping_range):
+    """
+    Expands a given polygon extent by a specified clipping range and then intersects it with a raster extent.
+
+    The function first expands the polygon extent uniformly in all directions by the clipping range. 
+    It then computes the intersection of this expanded extent with the given raster extent. 
+    This ensures that the final extent does not exceed the bounds of the raster.
+
+    Args:
+        polygon_extent (QgsRectangle): The bounding box of the polygon feature.
+        raster_extent (QgsRectangle): The extent of the raster layer.
+        clipping_range (float): The distance by which to expand the polygon extent.
+
+    Returns:
+        QgsRectangle: The intersected extent as a QgsRectangle object, representing the common area between the expanded polygon extent and the raster extent.
+    """
+    # Expand the polygon extent
+    expanded_extent = QgsRectangle(polygon_extent)
+    expanded_extent.grow(clipping_range)
+
+    # Intersect with the raster extent
+    expanded_extent.intersect(raster_extent)
+    return expanded_extent
     
 def add_layer_to_qgis(layer_path, layer_name, style_path, group_name=None, logger=None):
     """
@@ -254,7 +289,7 @@ def map_porepressure_curve_names(curve_name):
                         }
         return mapping_dict.get(curve_name, None)
 
-def reproject_if_needed(layer: Union[QgsVectorLayer, QgsRasterLayer], 
+def reproject_is_needed(layer: Union[QgsVectorLayer, QgsRasterLayer], 
                         output_crs: QgsCoordinateReferenceSystem):
     """Checks the layers CRS agains the specified output_crs, and return True if they match, False otherwise.
 
@@ -263,12 +298,12 @@ def reproject_if_needed(layer: Union[QgsVectorLayer, QgsRasterLayer],
         output_crs (QgsCoordinateReferenceSystem): The output coordinate system.
 
     Returns:
-        Bool: True if reprojection is not needed, False if reprojection is needed
+        Bool: True if reprojection is needed, False if reprojection is not needed
     """
     if layer.crs() != output_crs:
-        return False
-    else:
         return True
+    else:
+        return False
     
 def reproject_layers(keep_interm_layer: bool,
                      output_crs: QgsCoordinateReferenceSystem, 

@@ -30,13 +30,13 @@ __copyright__ = '(C) 2023 by DPE'
 
 __revision__ = '$Format:%H$'
 
-from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtCore import QCoreApplication, QEventLoop
 from qgis.core import (Qgis,
+                       QgsApplication,
                        QgsProject,
                        QgsProcessing,
                        QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterFolderDestination,
-                       QgsProcessingParameterRasterDestination,
                        QgsProcessingParameterString,
                        QgsProcessingParameterCrs,
                        QgsProcessingParameterBoolean,
@@ -44,15 +44,18 @@ from qgis.core import (Qgis,
                        QgsProcessingParameterEnum,
                        QgsProcessingParameterDefinition,
                        QgsProcessingParameterRasterLayer,
-                       QgsMessageLog)
+                       QgsMessageLog,
+                       QgsProcessingException,
+                       )
                        
 import traceback
 from pathlib import Path
 
 from .base_algorithm import GvBaseProcessingAlgorithms
+from ..utils.AddLayersTask import AddLayersTask
 from ..utils.gui import GuiUtils
 from ..utils.logger import CustomLogger
-from ..utils.methodslib import get_shapefile_as_json_pyqgis, process_raster_for_impactmap, add_layer_to_qgis
+from ..utils.methodslib import get_shapefile_as_json_pyqgis, process_raster_for_impactmap, add_layer_to_qgis, reproject_is_needed, reproject_layers
 
 from ..REMEDY_GIS_RiskTool.BegrensSkade import mainBegrensSkade_ImpactMap
 
@@ -85,6 +88,7 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
     # calling from the QGIS console.
     
     INPUT_EXCAVATION_POLY = 'INPUT_EXCAVATION_POLY'
+    INTERMEDIATE_LAYERS = ['INTERMEDIATE_LAYERS', 'Keep reprojected layers? (No point if you save to a temp folder)']
     OUTPUT_FOLDER = 'OUTPUT_FOLDER'
     OUTPUT_FEATURE_NAME = 'OUTPUT_FEATURE_NAME'
     
@@ -157,6 +161,12 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
                 defaultValue=QgsProject.instance().crs(),
             )
         )
+        param = QgsProcessingParameterBoolean(
+                        self.INTERMEDIATE_LAYERS[0],
+                        self.tr(f'{self.INTERMEDIATE_LAYERS[1]}'),
+                        defaultValue=False
+                    )
+        self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.OUTPUT_RESOLUTION[0],
                         self.tr(f'{self.OUTPUT_RESOLUTION[1]}'),
@@ -288,15 +298,12 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         )
         self.logger.info(f"PROCESS - bShortterm value: {bShortterm}")
         
-        source_excavation_poly = self.parameterAsVectorLayer(
+        bIntermediate = self.parameterAsBoolean(
             parameters,
-            self.INPUT_EXCAVATION_POLY,
+            self.INTERMEDIATE_LAYERS[0],
             context
         )
-        path_source_excavation_poly = source_excavation_poly.source().split('|')[0]
-        self.logger.info(f"PROCESS - Path to source excavation: {path_source_excavation_poly}")
-        
-        source_excavation_poly_as_json = get_shapefile_as_json_pyqgis(source_excavation_poly, self.logger)
+        self.logger.info(f"PROCESS - bIntermediate value: {bIntermediate}")
               
         feature_name = self.parameterAsString(
                 parameters,
@@ -309,8 +316,9 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
             parameters,
             self.OUTPUT_CRS,
             context
-        ).postgisSrid()
-        self.logger.info(f"PROCESS - Output CRS: {output_proj}")
+        )
+        output_srid = output_proj.postgisSrid()
+        self.logger.info(f"PROCESS - Output CRS(SRID): {output_srid}")
         
         clipping_range = self.parameterAsInt(parameters, self.CLIPPING_RANGE[0], context)
         porepressure_index = self.parameterAsEnum(
@@ -343,13 +351,20 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         output_folder_path.mkdir(parents=True, exist_ok=True)
         self.logger.info(f"PROCESS - Output folder: {str(output_folder_path)}")
         
-############### HANDELING OF INPUT RASTER ################
+       ############### HANDELING OF INPUT RASTER ################
         if source_raster_rock_surface is not None:
+            ############### RASTER REPROJECT ################
+            if reproject_is_needed(source_raster_rock_surface, output_proj):
+                feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_raster_rock_surface.name()}, ORIGINAL CRS: {source_raster_rock_surface.crs().postgisSrid()}")
+                try:
+                    _, source_raster_rock_surface = reproject_layers(bIntermediate, output_proj, output_folder_path, None, source_raster_rock_surface, context=context, logger=self.logger)
+                except Exception as e:
+                    feedback.reportError(f"Error during reprojection of RASTER LAYER: {e}")
+                    return {}
+            
             # Get the file path of the raster layer
             path_source_raster_rock_surface = source_raster_rock_surface.source().lower().split('|')[0]
-            self.logger.info(f"PROCESS - Original raster File path: {path_source_raster_rock_surface}")
-            feedback.pushInfo(f"PROCESS - Original raster File path: {path_source_raster_rock_surface}")
-
+            self.logger.info(f"PROCESS - Rock raster DTM File path: {path_source_raster_rock_surface}")
             # Check if the file extension is .tif
             if path_source_raster_rock_surface.endswith('.tif') or path_source_raster_rock_surface.endswith('.tiff'):
                 feedback.pushInfo("The raster layer is a TIFF file.")
@@ -357,6 +372,26 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
             else:
                 feedback.reportError("The raster layer is not a TIFF file. Convert it to TIF/TIFF!")
                 return {}
+        
+        #################  CHECK INPUT PROJECTIONS OF VECTOR LAYERS #################
+        #Retrive the parameter as vector layer
+        source_excavation_poly = self.parameterAsVectorLayer(parameters, self.INPUT_EXCAVATION_POLY, context )
+        # Check if each layer matches the output CRS --> If False is returned, reproject the layers.
+        if reproject_is_needed(source_excavation_poly, output_proj):
+            feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_excavation_poly.name()}, ORIGINAL CRS: {source_excavation_poly.crs().postgisSrid()}")
+            try:
+                source_excavation_poly, _ = reproject_layers(bIntermediate, output_proj, output_folder_path, source_excavation_poly, None, context=context, logger=self.logger)
+            except Exception as e:
+                feedback.reportError(f"Error during reprojection of EXCAVATION: {e}")
+                return {}
+        
+        path_source_excavation_poly = source_excavation_poly.source().split('|')[0]
+        self.logger.info(f"PROCESS - Path to source excavation: {path_source_excavation_poly}")
+        
+        source_excavation_poly_as_json = get_shapefile_as_json_pyqgis(source_excavation_poly, self.logger)
+        #source_excavation_poly_as_json = Utils.getShapefileAsJson(path_source_excavation_poly, logger)
+        self.logger.info(f"PROCESS - JSON structure: {source_excavation_poly_as_json}")
+        
         feedback.pushInfo("PROCESS - Running process_raster_for_impactmap...")
         path_processed_raster = process_raster_for_impactmap(source_excavation_poly=source_excavation_poly,
                                                                        dtb_raster_layer=source_raster_rock_surface,
@@ -387,23 +422,18 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
             short_term_curve = None
             
 #################  CHECK INPUT PROJECTIONS #################
-        # Get the CRS for the vector layers
-        crs_excavation = source_excavation_poly.crs()
-        crs_raster = source_raster_rock_surface.crs()
         # Compare the CRS of all layers
-        if crs_excavation == crs_raster:
-            feedback.pushInfo("All layers have the same projection.")
+        if source_excavation_poly.crs() == source_raster_rock_surface.crs():
+            feedback.pushInfo("PROCESS - All layers have the same projection.")
         else:
-            feedback.reportError("The layers have different projections. Reproject the layers to the same CRS!")
+            feedback.reportError("PROCESS - The layers have different projections. Reproject the layers to the same CRS!")
             return {}
         
-        feedback.pushInfo("PROCESS - Running mainBegrensSkade_ImpactMap...")
-        self.logger.info("PROCESS - Running mainBegrensSkade_ImpactMap...")
         feedback.pushInfo(f"PROCESS - PARAM excavationJson: {source_excavation_poly_as_json}")
         feedback.pushInfo(f"PROCESS - PARAM output_ws: {str(output_folder_path)}")
         feedback.pushInfo(f"PROCESS - PARAM output_name: {feature_name}")
         feedback.pushInfo(f"PROCESS - PARAM CALCULATION_RANGE: {380}")
-        feedback.pushInfo(f"PROCESS - PARAM output_proj: {output_proj}")
+        feedback.pushInfo(f"PROCESS - PARAM output_proj: {output_srid}")
         feedback.pushInfo(f"PROCESS - PARAM dtb_raster: {str(path_processed_raster)}")
         feedback.pushInfo(f"PROCESS - PARAM pw_reduction_curve: {pw_reduction_curve}")
         feedback.pushInfo(f"PROCESS - PARAM dry_crust_thk: {dry_crust_thk}")
@@ -419,15 +449,17 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         feedback.pushInfo(f"PROCESS - PARAM bShortterm: {bShortterm}")
         feedback.pushInfo(f"PROCESS - PARAM excavation_depth: {excavation_depth}")
         feedback.pushInfo(f"PROCESS - PARAM short_term_curve: {short_term_curve}")
-        
+        feedback.pushInfo("PROCESS - Running mainBegrensSkade_ImpactMap...")
+        self.logger.info("PROCESS - Running mainBegrensSkade_ImpactMap...")
+        feedback.setProgress(50)
         try:
             output_raster_path  = mainBegrensSkade_ImpactMap(
                 logger=self.logger,
                 excavationJson=source_excavation_poly_as_json,
                 output_ws=str(output_folder_path),
                 output_name=feature_name,
-                CALCULATION_RANGE=380, # hardcoded constant used in the underlying submodule's method.
-                output_proj=output_proj,
+                CALCULATION_RANGE=clipping_range, # '380' hardcoded constant used in the underlying submodule's method.
+                output_proj=output_srid,
                 dtb_raster=str(path_processed_raster),
                 pw_reduction_curve=pw_reduction_curve,
                 dry_crust_thk=dry_crust_thk,
@@ -458,21 +490,52 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         styles_dir_path = Path(__file__).resolve().parent.parent / "styles"
         self.logger.info(f"RESULTS - Styles directory path: {styles_dir_path}")
         
-        style_path = str(Path(styles_dir_path) / "IMPACT-MAP.qml")
-        layer_name = "IMPACT-MAP"
-        success = add_layer_to_qgis(layer_path=output_raster_path,
-                                    layer_name=layer_name, 
-                                    style_path=style_path, 
-                                    group_name=feature_name, 
-                                    logger=self.logger)
+        layers_info = [
+            ("IMPACT-MAP", output_raster_path, "IMPACT-MAP.qml")
+        ]
+        
+        # style_path = str(Path(styles_dir_path) / "IMPACT-MAP.qml")
+        # layer_name = "IMPACT-MAP"
+        # success = add_layer_to_qgis(layer_path=output_raster_path,
+        #                             layer_name=layer_name, 
+        #                             style_path=style_path, 
+        #                             group_name=feature_name, 
+        #                             logger=self.logger)
 
-        if success:
-            feedback.pushInfo(f"RESULTS - {layer_name} added successfully with style to group {feature_name}.")
-        else:
-            feedback.reportError(f"RESULTS - Failed to add layer {layer_name}")
+        # if success:
+        #     feedback.pushInfo(f"RESULTS - {layer_name} added successfully with style to group {feature_name}.")
+        # else:
+        #     feedback.reportError(f"RESULTS - Failed to add layer {layer_name}")
+        # feedback.setProgress(100)
+        # feedback.pushInfo(f"RESULTS - Finished adding results!")
+
+######### EXPERIMENTAL ADD LAYERS TO GUI #########
+        # Create the task
+        add_layers_task = AddLayersTask("Add Layers", layers_info, feature_name, styles_dir_path, self.logger)
+        # Local event loop
+        loop = QEventLoop()
+        # Define a slot to handle the task completion
+        def onTaskCompleted(success):
+            if success:
+                feedback.pushInfo("Layers added successfully.")
+            else:
+                feedback.reportError("Failed to add layers.")
+            loop.quit()  # Quit the event loop
+            
+        # Connect the task's completed signal to the slot
+        add_layers_task.taskCompleted.connect(onTaskCompleted)
+
+        # Start the task
+        QgsApplication.taskManager().addTask(add_layers_task)
+        # Start the event loop
+        loop.exec_()
+
+        # Check if the task was successful
+        if not add_layers_task.completed:
+            raise QgsProcessingException("Error occurred while adding layers.")
+        
         feedback.setProgress(100)
         feedback.pushInfo(f"RESULTS - Finished adding results!")
-        
         # Return the results of the algorithm. 
         return {self.OUTPUT_FOLDER: output_raster_path}
 

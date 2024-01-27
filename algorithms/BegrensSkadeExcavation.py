@@ -30,7 +30,7 @@ __copyright__ = '(C) 2023 by DPE'
 
 __revision__ = '$Format:%H$'
 
-from qgis.PyQt.QtCore import QCoreApplication, pyqtSignal, QEventLoop
+from qgis.PyQt.QtCore import QCoreApplication, QEventLoop
 from qgis.core import (Qgis,
                        QgsApplication,
                        QgsProject,
@@ -46,7 +46,6 @@ from qgis.core import (Qgis,
                        QgsProcessingParameterEnum,
                        QgsProcessingParameterField,
                        QgsMessageLog,
-                       QgsTask,
                        QgsProcessingException,
                        )
 
@@ -54,83 +53,12 @@ import traceback
 from pathlib import Path
 
 from .base_algorithm import GvBaseProcessingAlgorithms
+from ..utils.AddLayersTask import AddLayersTask
 from ..utils.gui import GuiUtils
 from ..utils.logger import CustomLogger
-from ..utils.methodslib import get_shapefile_as_json_pyqgis, add_layer_to_qgis, reproject_if_needed, reproject_layers
+from ..utils.methodslib import get_shapefile_as_json_pyqgis, reproject_is_needed, reproject_layers
 
 from ..REMEDY_GIS_RiskTool.BegrensSkade import mainBegrensSkade_Excavation
-
-class AddLayersTask(QgsTask):
-    """
-    A QGIS task for adding layers to the QGIS interface. This task handles layer additions 
-    in a background thread and updates the GUI in the main thread upon completion.
-
-    Attributes:
-        taskCompleted (pyqtSignal): Signal emitted when the task is completed.
-        layers_info (list): A list of tuples containing layer information (name, path, style).
-        feature_name (str): The name of the feature to which layers are related.
-        styles_dir_path (Path): The directory path where style files are located.
-        logger (Logger): Logger for logging messages.
-        completed (bool): Flag indicating whether the task has completed.
-    """
-
-    taskCompleted = pyqtSignal(bool)
-
-    def __init__(self, description, layers_info, feature_name, styles_dir_path, logger):
-        """
-        Initializes the AddLayersTask.
-
-        Args:
-            description (str): The description of the task.
-            layers_info (list): A list of tuples containing layer information (name, path, style).
-            feature_name (str): The name of the feature to which layers are related.
-            styles_dir_path (Path): The directory path where style files are located.
-            logger (Logger): Logger for logging messages.
-        """
-        super().__init__(description, QgsTask.CanCancel)
-        self.layers_info = layers_info
-        self.feature_name = feature_name
-        self.styles_dir_path = styles_dir_path
-        self.logger = logger
-        self.completed = False
-
-    def run(self):
-        """
-        The method that runs when the task is started. It should be used for 
-        non-GUI operations such as data preparation and validation.
-
-        Returns:
-            bool: True if preparation is successful, False otherwise.
-        """
-        for layer_name, shapefile_path, style_name in self.layers_info:
-            # Validate file paths
-            if not Path(shapefile_path).is_file():
-                self.logger.error(f"File not found: {shapefile_path}")
-                return False
-            # Log information about the layers to be added
-            self.logger.info(f"Preparing to add layer: {layer_name}")
-        return True
-
-    def finished(self, success):
-        """
-        The method that runs when the task is finished. It is executed in the main thread,
-        making it safe for GUI operations like adding layers and refreshing the layer tree.
-
-        Args:
-            success (bool): Indicates whether the task preparation was successful.
-        """
-        if success:
-            # GUI operations are performed here
-            for layer_name, shapefile_path, style_name in self.layers_info:
-                style_path = str(self.styles_dir_path / style_name)
-                if not add_layer_to_qgis(shapefile_path, layer_name, style_path, self.feature_name, self.logger):
-                    self.logger.error(f"Failed to add layer {layer_name}")
-                    self.taskCompleted.emit(False)
-                    return
-
-        self.completed = True
-        self.taskCompleted.emit(success)
-
 
 class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
     """
@@ -163,7 +91,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
     
     INPUT_BUILDING_POLY = 'INPUT_BUILDING_POLY'
     INPUT_EXCAVATION_POLY = 'INPUT_EXCAVATION_POLY'
-    INTERMEDIATE_LAYERS = ['INTERMEDIATE_LAYERS', 'Keep intermediate layers?']
+    INTERMEDIATE_LAYERS = ['INTERMEDIATE_LAYERS', 'Keep reprojected layers? (No point if you save to a temp folder)']
     
     SHORT_TERM_SETTLEMENT = ['SHORT_TERM_SETTLEMENT', 'Short term settlements']
     EXCAVATION_DEPTH = ['EXCAVATION_DEPTH', 'Depth of excavation [m]']
@@ -531,7 +459,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         ############### HANDELING OF INPUT RASTER ################
         if source_raster_rock_surface is not None:
             ############### RASTER REPROJECT ################
-            if not reproject_if_needed(source_raster_rock_surface, output_proj):
+            if reproject_is_needed(source_raster_rock_surface, output_proj):
                 feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_raster_rock_surface.name()}, ORIGINAL CRS: {source_raster_rock_surface.crs().postgisSrid()}")
                 try:
                     _, source_raster_rock_surface = reproject_layers(bIntermediate, output_proj, output_folder_path, None, source_raster_rock_surface, context=context, logger=self.logger)
@@ -554,14 +482,14 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         #################  CHECK INPUT PROJECTIONS OF VECTOR LAYERS #################
         
         # Check if each layer matches the output CRS --> If False is returned, reproject the layers.
-        if not reproject_if_needed(source_building_poly, output_proj):
+        if reproject_is_needed(source_building_poly, output_proj):
             feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_building_poly.name()}, ORIGINAL CRS: {source_building_poly.crs().postgisSrid()}")
             try:
                 source_building_poly, _ = reproject_layers(bIntermediate, output_proj, output_folder_path, source_building_poly, None, context=context, logger=self.logger)
             except Exception as e:
                 feedback.reportError(f"Error during reprojection of BUILDINGS: {e}")
                 return {}
-        if not reproject_if_needed(source_excavation_poly, output_proj):
+        if reproject_is_needed(source_excavation_poly, output_proj):
             feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_excavation_poly.name()}, ORIGINAL CRS: {source_excavation_poly.crs().postgisSrid()}")
             try:
                 source_excavation_poly, _ = reproject_layers(bIntermediate, output_proj, output_folder_path, source_excavation_poly, None, context=context, logger=self.logger)
@@ -681,7 +609,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         try:
             output_shapefiles = mainBegrensSkade_Excavation(
                 logger=self.logger,
-                buildingsFN=path_source_building_poly,
+                buildingsFN=str(path_source_building_poly),
                 excavationJson=source_excavation_poly_as_json,
                 output_ws=output_folder,
                 feature_name=feature_name,
@@ -690,7 +618,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
                 excavation_depth=excavation_depth,
                 short_term_curve=short_term_curve,
                 bLongterm=bLongterm,
-                dtb_raster=path_source_raster_rock_surface,
+                dtb_raster=str(path_source_raster_rock_surface),
                 pw_reduction_curve=pw_reduction_curve,
                 dry_crust_thk=dry_crust_thk,
                 dep_groundwater=dep_groundwater,
@@ -747,7 +675,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         #     else:
         #         feedback.reportError(f"RESULTS - Failed to add layer {layer_name}")
         
-        # EXPERIMENTAL ADD LAYERS TO GUI
+######### EXPERIMENTAL ADD LAYERS TO GUI #########
         # Create the task
         add_layers_task = AddLayersTask("Add Layers", layers_info, feature_name, styles_dir_path, self.logger)
         # Local event loop
@@ -755,9 +683,9 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         # Define a slot to handle the task completion
         def onTaskCompleted(success):
             if success:
-                feedback.pushInfo("Layers added successfully.")
+                feedback.pushInfo("RESULTS - Layers added successfully.")
             else:
-                feedback.reportError("Failed to add layers.")
+                feedback.reportError("RESULTS - Failed to add layers.")
             loop.quit()  # Quit the event loop
             
         # Connect the task's completed signal to the slot
