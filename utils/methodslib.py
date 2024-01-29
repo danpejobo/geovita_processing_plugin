@@ -13,7 +13,8 @@ __author__ = 'DPE'
 __date__ = '2024-01-17'
 __copyright__ = '(C) 2024 by DPE'
 
-from qgis.core import (QgsWkbTypes, 
+from qgis.core import (Qgis,
+                       QgsWkbTypes, 
                        QgsProcessingUtils, 
                        QgsRasterFileWriter, 
                        QgsRasterLayer,
@@ -27,6 +28,10 @@ from qgis import processing
 from pathlib import Path
 from typing import Union
 import shutil
+
+if Qgis.QGIS_VERSION_INT < 33200:
+    import tempfile
+    QGIS_VERSION = Qgis.QGIS_VERSION_INT
 
 def get_shapefile_as_json_pyqgis(layer, logger=None):
         if logger is not None:
@@ -90,8 +95,13 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipp
     Returns:
     - Path: Path object of the processed raster in TIFF format.
     """
-    # Processing temp folder
-    temp_folder = Path(QgsProcessingContext.temporaryFolder(context) if context else QgsProcessingUtils.tempFolder())
+    # Check if the running version of QGIS is lower than the requirement
+    if QGIS_VERSION < 33200:
+        # Create a temporary directory using Python's tempfile module
+        temp_dir = tempfile.mkdtemp()
+        temp_folder = Path(temp_dir)
+    else:
+        temp_folder = Path(QgsProcessingContext.temporaryFolder(context) if context else QgsProcessingUtils.tempFolder())
     
     # Prepare processing context and feedback
     if not context:
@@ -258,8 +268,13 @@ def reproject_layers(keep_interm_layer: bool,
     Returns:
     - Tuple: (reprojected_vector_path, reprojected_raster_path) Paths to the reprojected layers.
     """
-    # Processing temp folder
-    temp_folder = Path(QgsProcessingContext.temporaryFolder(context) if context else QgsProcessingUtils.tempFolder())
+    # Check if the running version of QGIS is lower than the requirement
+    if QGIS_VERSION < 33200:
+        # Create a temporary directory using Python's tempfile module
+        temp_dir = tempfile.mkdtemp()
+        temp_folder = Path(temp_dir)
+    else:
+        temp_folder = Path(QgsProcessingContext.temporaryFolder(context) if context else QgsProcessingUtils.tempFolder())
 
     # Prepare processing context and feedback
     if not context:
