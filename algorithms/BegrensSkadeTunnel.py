@@ -30,14 +30,13 @@ __copyright__ = '(C) 2023 by DPE'
 
 __revision__ = '$Format:%H$'
 
-from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtCore import QCoreApplication, QEventLoop
 from qgis.core import (Qgis,
+                       QgsApplication,
                        QgsProject,
                        QgsMessageLog,
                        QgsProcessing,
-                       QgsFeatureSink,
                        QgsProcessingParameterFeatureSource,
-                       QgsProcessingParameterFeatureSink,
                        QgsProcessingParameterBoolean,
                        QgsProcessingParameterDefinition,
                        QgsProcessingParameterString,
@@ -46,7 +45,9 @@ from qgis.core import (Qgis,
                        QgsProcessingParameterFolderDestination,
                        QgsProcessingParameterEnum,
                        QgsProcessingParameterField,
-                       QgsProcessingParameterRasterLayer)
+                       QgsProcessingParameterRasterLayer,
+                       QgsProcessingException,
+                       )
 
 from .base_algorithm import GvBaseProcessingAlgorithms
 
@@ -55,9 +56,13 @@ from pathlib import Path
 
 from ..REMEDY_GIS_RiskTool.BegrensSkade import mainBegrensSkade_Tunnel
 
+from ..utils.AddLayersTask import AddLayersTask
 from ..utils.gui import GuiUtils
 from ..utils.logger import CustomLogger
-from ..utils.methodslib import get_shapefile_as_json_pyqgis, add_layer_to_qgis, map_porepressure_curve_names
+from ..utils.methodslib import (get_shapefile_as_json_pyqgis,
+                                map_porepressure_curve_names, 
+                                reproject_is_needed, 
+                                reproject_layers)
 
 
 class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
@@ -88,6 +93,7 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
 
     INPUT_BUILDING_POLY = 'INPUT_BUILDING_POLY'
     INPUT_TUNNEL_POLY = 'INPUT_TUNNEL_POLY'
+    INTERMEDIATE_LAYERS = ['INTERMEDIATE_LAYERS', 'Keep reprojected layers? (No point if you save to a temp folder)']
     
     OUTPUT_FOLDER = 'OUTPUT_FOLDER'
     OUTPUT_FEATURE_NAME = 'OUTPUT_FEATURE_NAME'
@@ -161,7 +167,8 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                         self.TUNNEL_DEPTH[0],
                         self.tr(f'{self.TUNNEL_DEPTH[1]}'),
                         QgsProcessingParameterNumber.Double,
-                        defaultValue=15
+                        defaultValue=15,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -170,7 +177,8 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                         self.TUNNEL_DIAM[0],
                         self.tr(f'{self.TUNNEL_DIAM[1]}'),
                         QgsProcessingParameterNumber.Double,
-                        defaultValue=9.5
+                        defaultValue=9.5,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -179,7 +187,8 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                         self.VOLUME_LOSS[0],
                         self.tr(f'{self.VOLUME_LOSS[1]}'),
                         QgsProcessingParameterNumber.Integer,
-                        defaultValue=2
+                        defaultValue=2,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -188,7 +197,8 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                         self.TROUGH_WIDTH[0],
                         self.tr(f'{self.TROUGH_WIDTH[1]}'),
                         QgsProcessingParameterNumber.Double,
-                        defaultValue=0.5
+                        defaultValue=0.5,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -222,7 +232,8 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                         self.TUNNEL_LEAKAGE[0],
                         self.tr(f'{self.TUNNEL_LEAKAGE[1]}'),
                         defaultValue=10,
-                        optional=True
+                        optional=True,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -231,21 +242,24 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                         self.POREPRESSURE_REDUCTION[0],
                         self.tr(f'{self.POREPRESSURE_REDUCTION[1]}'),
                         defaultValue=0,
-                        optional=True
+                        optional=True,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.DRY_CRUST_THICKNESS[0],
                         self.tr(f'{self.DRY_CRUST_THICKNESS[1]}'),
-                        defaultValue=5
+                        defaultValue=5,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.DEPTH_GROUNDWATER[0],
                         self.tr(f'{self.DEPTH_GROUNDWATER[1]}'),
-                        defaultValue=3
+                        defaultValue=3,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -253,7 +267,8 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                         self.SOIL_DENSITY[0],
                         self.tr(f'{self.SOIL_DENSITY[1]}'),
                         QgsProcessingParameterNumber.Double,
-                        defaultValue=18.5
+                        defaultValue=18.5,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -261,35 +276,40 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                         self.OCR[0],
                         self.tr(f'{self.OCR[1]}'),
                         QgsProcessingParameterNumber.Double,
-                        defaultValue=1.2
+                        defaultValue=1.2,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.JANBU_REF_STRESS[0],
                         self.tr(f'{self.JANBU_REF_STRESS[1]}'),
-                        defaultValue=0
+                        defaultValue=0,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.JANBU_CONSTANT[0],
                         self.tr(f'{self.JANBU_CONSTANT[1]}'),
-                        defaultValue=4
+                        defaultValue=4,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.JANBU_COMP_MODULUS[0],
                         self.tr(f'{self.JANBU_COMP_MODULUS[1]}'),
-                        defaultValue=15
+                        defaultValue=15,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.CONSOLIDATION_TIME[0],
                         self.tr(f'{self.CONSOLIDATION_TIME[1]}'),
-                        defaultValue=1000
+                        defaultValue=1000,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -334,8 +354,7 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         self.addParameter(
             QgsProcessingParameterString(
                 self.OUTPUT_FEATURE_NAME,
-                self.tr('Naming Conventions for Analysis and Features'),
-                defaultValue="1_analysis_"
+                self.tr('Naming Conventions for Analysis and Features (appended to file-names)'),
             )
         )
         self.addParameter(
@@ -345,6 +364,12 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                 defaultValue=QgsProject.instance().crs(),
             )
         )
+        param = QgsProcessingParameterBoolean(
+                        self.INTERMEDIATE_LAYERS[0],
+                        self.tr(f'{self.INTERMEDIATE_LAYERS[1]}'),
+                        defaultValue=False
+                    )
+        self.addParameter(param)
         self.addParameter(
             QgsProcessingParameterFolderDestination(
                 self.OUTPUT_FOLDER,
@@ -364,6 +389,9 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         self.logger.info(f"PROCESS - bLongterm value: {bLongterm}")
         bVulnerability = self.parameterAsBoolean(parameters, self.VULNERABILITY_ANALYSIS[0], context)
         self.logger.info(f"PROCESS - bVulnerability value: {bVulnerability}")
+        bIntermediate = self.parameterAsBoolean(parameters, self.INTERMEDIATE_LAYERS[0], context)
+        self.logger.info(f"PROCESS - bIntermediate value: {bIntermediate}")
+        feedback.setProgress(10)
 
         source_building_poly = self.parameterAsVectorLayer(parameters, self.INPUT_BUILDING_POLY, context)
         path_source_building_poly = source_building_poly.source().split('|')[0]
@@ -376,23 +404,6 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         source_tunnel_poly_as_json = get_shapefile_as_json_pyqgis(source_tunnel_poly, self.logger)
         self.logger.info(f"PROCESS - JSON structure: {source_tunnel_poly_as_json}")
         
-        source_raster_rock_surface = self.parameterAsRasterLayer(parameters, self.RASTER_ROCK_SURFACE[0], context )
-        self.logger.info(f"PROCESS - Rock raster DTM: {source_raster_rock_surface}")
-        
-        ############### HANDELING OF INPUT RASTER ################
-        if source_raster_rock_surface is not None:
-            # Get the file path of the raster layer
-            path_source_raster_rock_surface = source_raster_rock_surface.source().lower().split('|')[0]
-            self.logger.info(f"PROCESS - Rock raster DTM File path: {path_source_raster_rock_surface}")
-
-            # Check if the file extension is .tif
-            if path_source_raster_rock_surface.endswith('.tif') or path_source_raster_rock_surface.endswith('.tiff'):
-                feedback.pushInfo("The raster layer is a TIFF file.")
-                # Continue processing...
-            else:
-                feedback.reportError("The raster layer is not a TIFF file. Convert it to TIF/TIFF!")
-                return {}
-        
         output_folder = self.parameterAsString(parameters, self.OUTPUT_FOLDER, context)
         # Ensure the output directory exists
         output_folder_path = Path(output_folder)
@@ -402,8 +413,39 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         feature_name = self.parameterAsString(parameters, self.OUTPUT_FEATURE_NAME, context)
         self.logger.info(f"PROCESS - Feature name: {feature_name}")
         
-        output_proj = self.parameterAsCrs(parameters, self.OUTPUT_CRS, context).postgisSrid()
-        self.logger.info(f"PROCESS - Output CRS: {output_proj}")
+        output_proj = self.parameterAsCrs(parameters, self.OUTPUT_CRS, context)
+        output_srid = output_proj.postgisSrid()
+        self.logger.info(f"PROCESS - Output CRS(SRID): {output_srid}")
+            
+        #################  CHECK INPUT PROJECTIONS OF VECTOR LAYERS #################
+        
+        # Check if each layer matches the output CRS --> If False is returned, reproject the layers.
+        if reproject_is_needed(source_building_poly, output_proj):
+            feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_building_poly.name()}, ORIGINAL CRS: {source_building_poly.crs().postgisSrid()}")
+            try:
+                source_building_poly, _ = reproject_layers(bIntermediate, output_proj, output_folder_path, vector_layer=source_building_poly, raster_layer=None, context=context, logger=self.logger)
+            except Exception as e:
+                feedback.reportError(f"Error during reprojection of BUILDINGS: {e}")
+                return {}
+        if reproject_is_needed(source_tunnel_poly, output_proj):
+            feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_tunnel_poly.name()}, ORIGINAL CRS: {source_tunnel_poly.crs().postgisSrid()}")
+            try:
+                source_tunnel_poly, _ = reproject_layers(bIntermediate, output_proj, output_folder_path, vector_layer=source_tunnel_poly, raster_layer=None, context=context, logger=self.logger)
+            except Exception as e:
+                feedback.reportError(f"Error during reprojection of EXCAVATION: {e}")
+                return {}
+        
+        path_source_building_poly = source_building_poly.source().split('|')[0]
+        self.logger.info(f"PROCESS - Path to source buildings: {path_source_building_poly}")
+        
+        path_source_tunnel_poly = source_tunnel_poly.source().split('|')[0]
+        self.logger.info(f"PROCESS - Path to source excavation: {path_source_tunnel_poly}")
+        
+        source_tunnel_poly_as_json = get_shapefile_as_json_pyqgis(source_tunnel_poly, self.logger)
+        #source_excavation_poly_as_json = Utils.getShapefileAsJson(path_source_excavation_poly, logger)
+        self.logger.info(f"PROCESS - JSON structure: {source_tunnel_poly_as_json}")
+            
+        feedback.setProgress(30)
         
         if not bShortterm and not bLongterm:
             error_msg = "Please choose Short term or Long term settlements, or both"
@@ -425,6 +467,34 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         if bLongterm:
             self.logger.info(f"PROCESS - ######## LONGTERM ########")
             self.logger.info(f"PROCESS - Defining long term input")
+            
+        ############### HANDELING OF INPUT RASTER ################
+            source_raster_rock_surface = self.parameterAsRasterLayer(parameters, self.RASTER_ROCK_SURFACE[0], context )
+            self.logger.info(f"PROCESS - Rock raster DTM: {source_raster_rock_surface}")
+            if source_raster_rock_surface is not None:
+                ############### RASTER REPROJECT ################
+                if reproject_is_needed(source_raster_rock_surface, output_proj):
+                    feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_raster_rock_surface.name()}, ORIGINAL CRS: {source_raster_rock_surface.crs().postgisSrid()}")
+                    try:
+                        _, source_raster_rock_surface = reproject_layers(bIntermediate, output_proj, output_folder_path, vector_layer=None, raster_layer=source_raster_rock_surface, context=context, logger=self.logger)
+                    except Exception as e:
+                        feedback.reportError(f"Error during reprojection of RASTER LAYER: {e}")
+                        return {}
+                
+                # Get the file path of the raster layer
+                path_source_raster_rock_surface = source_raster_rock_surface.source().lower().split('|')[0]
+                self.logger.info(f"PROCESS - Rock raster DTM File path: {path_source_raster_rock_surface}")
+                # Check if the file extension is .tif
+                if path_source_raster_rock_surface.endswith('.tif') or path_source_raster_rock_surface.endswith('.tiff'):
+                    feedback.pushInfo("The raster layer is a TIFF file.")
+                    # Continue processing...
+                else:
+                    feedback.reportError("The raster layer is not a TIFF file. Convert it to TIF/TIFF!")
+                    return {}
+            else:
+                feedback.reportError("PROCESS - Something is wrong with the raster.")
+                return {}
+            
             porepressure_index = self.parameterAsEnum(parameters, self.POREPRESSURE_ENUM_CURVES[0],context)
             porewp_calc_type_english = self.CURVES_enum_porepressure[porepressure_index]
             porewp_calc_type = map_porepressure_curve_names(porewp_calc_type_english)
@@ -470,14 +540,50 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
             structure_field = None
             status_field = None
         
+        #################  LOG PROJECTIONS #################
+        feedback.pushInfo(f"PROCESS - CRS BUILDINGS-vector: {source_building_poly.crs().postgisSrid()}")
+        feedback.pushInfo(f"PROCESS - CRS EXCAVATION-vector: {source_tunnel_poly.crs().postgisSrid()}")
+        feedback.pushInfo(f"PROCESS - CRS DTB-raster: {source_raster_rock_surface.crs().postgisSrid()}")
+        
+        ###### FEEDBACK ALL PARAMETERS #########
+        feedback.pushInfo("PROCESS - Running mainBegrensSkade_Excavation...")
+        self.logger.info("PROCESS - Running mainBegrensSkade_Excavation...")
+        feedback.pushInfo(f"PROCESS - Param: buildingsFN = {path_source_building_poly}")
+        feedback.pushInfo(f"PROCESS - Param: excavationJson = {source_tunnel_poly_as_json}")
+        feedback.pushInfo(f"PROCESS - Param: Output folder = {output_folder}")
+        feedback.pushInfo(f"PROCESS - Param: feature_name = {feature_name}")
+        feedback.pushInfo(f"PROCESS - Param: output_proj = {output_srid}")
+        feedback.pushInfo(f"PROCESS - Param: bShortterm = {bShortterm}")
+        feedback.pushInfo(f"PROCESS - Param: tunnel_depth = {tunnel_depth}")
+        feedback.pushInfo(f"PROCESS - Param: tunnel_diameter = {tunnel_diameter}")
+        feedback.pushInfo(f"PROCESS - Param: volume_loss = {volume_loss}")
+        feedback.pushInfo(f"PROCESS - Param: trough_width = {trough_width}")
+        feedback.pushInfo(f"PROCESS - Param: bLongterm = {bLongterm}")
+        feedback.pushInfo(f"PROCESS - Param: tunnel_leakage = {tunnel_leakage}")
+        feedback.pushInfo(f"PROCESS - Param: porewp_calc_type = {porewp_calc_type}")
+        feedback.pushInfo(f"PROCESS - Param: porewp_red_at_site = {porewp_red_at_site}")
+        feedback.pushInfo(f"PROCESS - Param: dtb_raster = {path_source_raster_rock_surface}")
+        feedback.pushInfo(f"PROCESS - Param: dry_crust_thk = {dry_crust_thk}")
+        feedback.pushInfo(f"PROCESS - Param: dep_groundwater = {dep_groundwater}")
+        feedback.pushInfo(f"PROCESS - Param: density_sat = {density_sat}")
+        feedback.pushInfo(f"PROCESS - Param: OCR = {ocr_value}")
+        feedback.pushInfo(f"PROCESS - Param: janbu_ref_stress = {janbu_ref_stress}")
+        feedback.pushInfo(f"PROCESS - Param: janbu_const = {janbu_const}")
+        feedback.pushInfo(f"PROCESS - Param: janbu_m = {janbu_m}")
+        feedback.pushInfo(f"PROCESS - Param: consolidation_time = {consolidation_time}")
+        feedback.pushInfo(f"PROCESS - Param: bVulnerability = {bVulnerability}")
+        feedback.pushInfo(f"PROCESS - Param: fieldNameFoundation = {foundation_field}")
+        feedback.pushInfo(f"PROCESS - Param: fieldNameStructure = {structure_field}")
+        feedback.pushInfo(f"PROCESS - Param: fieldNameStatus = {status_field}")
+        feedback.setProgress(50)
         try:
             output_shapefiles = mainBegrensSkade_Tunnel(
                 logger=self.logger,
-                buildingsFN=path_source_building_poly,
+                buildingsFN=str(path_source_building_poly),
                 tunnelJson=source_tunnel_poly_as_json,
                 output_ws=output_folder,
                 feature_name=feature_name,
-                output_proj=output_proj,
+                output_proj=output_srid,
                 bShortterm=bShortterm,
                 tunnel_depth=tunnel_depth,
                 tunnel_diameter=tunnel_diameter,
@@ -487,7 +593,7 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                 tunnel_leakage=tunnel_leakage,
                 porewp_calc_type=porewp_calc_type,
                 porewp_red_at_site=porewp_red_at_site,
-                dtb_raster=path_source_raster_rock_surface,
+                dtb_raster=str(path_source_raster_rock_surface),
                 dry_crust_thk=dry_crust_thk,
                 dep_groundwater=dep_groundwater,
                 density_sat=density_sat,
@@ -531,18 +637,33 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                 ("TUNNEL_BUILDING-RISK-ANGLE", output_shapefiles[0], "BUILDING-TOTAL-RISK-ANGLE_risk_angle.qml")
             ])
 
-        # Loop through each layer and add it to the project
-        for layer_name, shapefile_path, style_name in layers_info:
-            style_path = str(Path(styles_dir_path) / style_name)
-            success = add_layer_to_qgis(shapefile_path, layer_name, style_path, feature_name, self.logger)
-
+######### EXPERIMENTAL ADD LAYERS TO GUI #########
+        # Create the task
+        add_layers_task = AddLayersTask("Add Layers", layers_info, feature_name, styles_dir_path, self.logger)
+        # Local event loop
+        loop = QEventLoop()
+        # Define a slot to handle the task completion
+        def onTaskCompleted(success):
             if success:
-                feedback.pushInfo(f"RESULTS - {layer_name} added successfully with style to group {feature_name}.")
+                feedback.pushInfo("Layers added successfully.")
             else:
-                feedback.reportError(f"RESULTS - Failed to add layer {layer_name}")
+                feedback.reportError("Failed to add layers.")
+            loop.quit()  # Quit the event loop
+            
+        # Connect the task's completed signal to the slot
+        add_layers_task.taskCompleted.connect(onTaskCompleted)
+
+        # Start the task
+        QgsApplication.taskManager().addTask(add_layers_task)
+        # Start the event loop
+        loop.exec_()
+
+        # Check if the task was successful
+        if not add_layers_task.completed:
+            raise QgsProcessingException("Error occurred while adding layers.")
+        
         feedback.setProgress(100)
         feedback.pushInfo(f"RESULTS - Finished adding results!")
-        
         
         return {
             self.OUTPUT_BUILDING: output_shapefiles[0],

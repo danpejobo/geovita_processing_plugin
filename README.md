@@ -51,11 +51,11 @@ If you want to enable `vulnerability analysis` you will need some information on
 | B     | Raft                                                    | Reinforced concrete              | Good                   |
 | B     | Betong                                                  | B - Armert betong                | B - God tilstand       |
 | B     | B - På løsmasser - Hel plate (betong, såle)             | -                                | -                      |
-| C     | Strip                                                   | Mixed                            | -                      |
-| C     | Grunnmur                                                | C - Tre eller varierende         | -                      |
+| C     | Strip                                                   | Mixed                            | Medium                 |
+| C     | Grunnmur                                                | C - Tre eller varierende         | C - Brukbar tilstand   |
 | C     | C - På løsmasser - Stripefundament (heller)             | -                                | -                      |
-| D     | Wooden piles                                            | Masonry                          | Medium                 |
-| D     | Trepeler                                                | D - Murstein eller spesiell type | C - Brukbar tilstand   |
+| D     | Wooden piles                                            | Masonry                          | Bad                    |
+| D     | Trepeler                                                | D - Murstein eller spesiell type | D - Dårlig             |
 | D     | D - På løsmasser - Punkt- og trefundamenter (banketter) | -                                | -                      |
 
 ## Results
