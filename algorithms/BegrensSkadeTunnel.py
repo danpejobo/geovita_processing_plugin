@@ -167,7 +167,8 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                         self.TUNNEL_DEPTH[0],
                         self.tr(f'{self.TUNNEL_DEPTH[1]}'),
                         QgsProcessingParameterNumber.Double,
-                        defaultValue=15
+                        defaultValue=15,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -176,7 +177,8 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                         self.TUNNEL_DIAM[0],
                         self.tr(f'{self.TUNNEL_DIAM[1]}'),
                         QgsProcessingParameterNumber.Double,
-                        defaultValue=9.5
+                        defaultValue=9.5,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -185,7 +187,8 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                         self.VOLUME_LOSS[0],
                         self.tr(f'{self.VOLUME_LOSS[1]}'),
                         QgsProcessingParameterNumber.Integer,
-                        defaultValue=2
+                        defaultValue=2,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -194,7 +197,8 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                         self.TROUGH_WIDTH[0],
                         self.tr(f'{self.TROUGH_WIDTH[1]}'),
                         QgsProcessingParameterNumber.Double,
-                        defaultValue=0.5
+                        defaultValue=0.5,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -228,7 +232,8 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                         self.TUNNEL_LEAKAGE[0],
                         self.tr(f'{self.TUNNEL_LEAKAGE[1]}'),
                         defaultValue=10,
-                        optional=True
+                        optional=True,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -237,21 +242,24 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                         self.POREPRESSURE_REDUCTION[0],
                         self.tr(f'{self.POREPRESSURE_REDUCTION[1]}'),
                         defaultValue=0,
-                        optional=True
+                        optional=True,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.DRY_CRUST_THICKNESS[0],
                         self.tr(f'{self.DRY_CRUST_THICKNESS[1]}'),
-                        defaultValue=5
+                        defaultValue=5,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.DEPTH_GROUNDWATER[0],
                         self.tr(f'{self.DEPTH_GROUNDWATER[1]}'),
-                        defaultValue=3
+                        defaultValue=3,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -259,7 +267,8 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                         self.SOIL_DENSITY[0],
                         self.tr(f'{self.SOIL_DENSITY[1]}'),
                         QgsProcessingParameterNumber.Double,
-                        defaultValue=18.5
+                        defaultValue=18.5,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -267,35 +276,40 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                         self.OCR[0],
                         self.tr(f'{self.OCR[1]}'),
                         QgsProcessingParameterNumber.Double,
-                        defaultValue=1.2
+                        defaultValue=1.2,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.JANBU_REF_STRESS[0],
                         self.tr(f'{self.JANBU_REF_STRESS[1]}'),
-                        defaultValue=0
+                        defaultValue=0,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.JANBU_CONSTANT[0],
                         self.tr(f'{self.JANBU_CONSTANT[1]}'),
-                        defaultValue=4
+                        defaultValue=4,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.JANBU_COMP_MODULUS[0],
                         self.tr(f'{self.JANBU_COMP_MODULUS[1]}'),
-                        defaultValue=15
+                        defaultValue=15,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.CONSOLIDATION_TIME[0],
                         self.tr(f'{self.CONSOLIDATION_TIME[1]}'),
-                        defaultValue=1000
+                        defaultValue=1000,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)

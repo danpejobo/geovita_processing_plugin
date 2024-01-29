@@ -170,7 +170,8 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
                         self.OUTPUT_RESOLUTION[0],
                         self.tr(f'{self.OUTPUT_RESOLUTION[1]}'),
                         QgsProcessingParameterNumber.Double,
-                        defaultValue=10
+                        defaultValue=10,
+                        minValue=0
                     )
         self.addParameter(param)
         self.addParameter(
@@ -191,7 +192,8 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
                         self.EXCAVATION_DEPTH[0],
                         self.tr(f'{self.EXCAVATION_DEPTH[1]}'),
                         QgsProcessingParameterNumber.Double,
-                        defaultValue=0
+                        defaultValue=0,
+                        minValue=0
                     )
         self.addParameter(param)
         param = QgsProcessingParameterEnum(
@@ -207,7 +209,8 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         param = QgsProcessingParameterNumber(
                         self.CLIPPING_RANGE[0],
                         self.tr(f'{self.CLIPPING_RANGE[1]}'),
-                        defaultValue=150
+                        defaultValue=150,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)      
@@ -223,21 +226,24 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         param = QgsProcessingParameterNumber(
                         self.POREPRESSURE_REDUCTION[0],
                         self.tr(f'{self.POREPRESSURE_REDUCTION[1]}'),
-                        defaultValue=50
+                        defaultValue=50,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.DRY_CRUST_THICKNESS[0],
                         self.tr(f'{self.DRY_CRUST_THICKNESS[1]}'),
-                        defaultValue=5
+                        defaultValue=5,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.DEPTH_GROUNDWATER[0],
                         self.tr(f'{self.DEPTH_GROUNDWATER[1]}'),
-                        defaultValue=3
+                        defaultValue=3,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -245,7 +251,8 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
                         self.SOIL_DENSITY[0],
                         self.tr(f'{self.SOIL_DENSITY[1]}'),
                         QgsProcessingParameterNumber.Double,
-                        defaultValue=18.5
+                        defaultValue=18.5,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -253,35 +260,40 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
                         self.OCR[0],
                         self.tr(f'{self.OCR[1]}'),
                         QgsProcessingParameterNumber.Double,
-                        defaultValue=1.2
+                        defaultValue=1.2,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.JANBU_REF_STRESS[0],
                         self.tr(f'{self.JANBU_REF_STRESS[1]}'),
-                        defaultValue=0
+                        defaultValue=0,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.JANBU_CONSTANT[0],
                         self.tr(f'{self.JANBU_CONSTANT[1]}'),
-                        defaultValue=4
+                        defaultValue=4,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.JANBU_COMP_MODULUS[0],
                         self.tr(f'{self.JANBU_COMP_MODULUS[1]}'),
-                        defaultValue=15
+                        defaultValue=15,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.CONSOLIDATION_TIME[0],
                         self.tr(f'{self.CONSOLIDATION_TIME[1]}'),
-                        defaultValue=1000
+                        defaultValue=1000,
+                        minValue=0
                     )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
