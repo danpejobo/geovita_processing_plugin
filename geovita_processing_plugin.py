@@ -30,7 +30,7 @@ __copyright__ = '(C) 2024 by DPE'
 
 __revision__ = '$Format:%H$'
 
-from qgis.core import QgsProcessingAlgorithm, QgsApplication
+from qgis.core import QgsApplication
 from .geovita_processing_plugin_provider import GeovitaProcessingPluginProvider
 
 
