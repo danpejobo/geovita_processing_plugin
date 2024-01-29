@@ -13,8 +13,7 @@ __author__ = 'DPE'
 __date__ = '2024-01-17'
 __copyright__ = '(C) 2024 by DPE'
 
-from qgis.core import (QgsProject, 
-                       QgsWkbTypes, 
+from qgis.core import (QgsWkbTypes, 
                        QgsProcessingUtils, 
                        QgsRasterFileWriter, 
                        QgsRasterLayer,
@@ -22,8 +21,6 @@ from qgis.core import (QgsProject,
                        QgsProcessingContext,
                        QgsProcessingFeedback,
                        QgsCoordinateReferenceSystem,
-                       QgsLayerTreeGroup,
-                       QgsLayerTreeLayer,
                        QgsRectangle)
 
 from qgis import processing
@@ -33,9 +30,9 @@ import shutil
 
 def get_shapefile_as_json_pyqgis(layer, logger=None):
         if logger is not None:
-            logger.debug("Logger sent, shapeFN name: {}".format(layer.id()))
+            logger.debug("@get_shapefile_as_json_pyqgis@: ShapeFN id: {}".format(layer.id()))
         if not layer.isValid():
-            logger.error("Layer is not valid")
+            logger.error("@get_shapefile_as_json_pyqgis@: Layer is not valid")
 
         epsgNum = layer.crs().postgisSrid()
 
@@ -75,7 +72,7 @@ def get_shapefile_as_json_pyqgis(layer, logger=None):
 
         return {"features": features}
     
-def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipping_range, output_resolution, output_folder, context=None, logger=None):
+def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipping_range, output_resolution, output_folder, output_crs, context=None, logger=None):
     """
     Processes raster data for excavation polygons by clipping, resampling, 
     and converting it to TIFF format, and then returns the path to the processed file.
@@ -86,6 +83,7 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipp
     - clipping_range (int): Clipping range for adjusting extents of the excavation.
     - output_resolution (float): Desired output resolution for resampling.
     - output_folder (Path): Folder path for storing output files, as a Path object.
+    - output_crs (QgsCoordinateReferenceSystem): The desired output CRS
     - context (QgsProcessingContext): Processing context for managing temporary files. Defaults to None.
     - logger: Logger object for logging messages. Defaults to None.
 
@@ -107,31 +105,9 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipp
         
         # Adjust the polygon extent using the intersected extent
         adjusted_polygon_extent = get_intersected_extent(polygon_extent, raster_extent, clipping_range)
-
-        #logger.debug(f"POLYGON Extent RAW: {polygon_extent}")
-               
-        # Compare and adjust the polygon_extent if it exceeds the raster_extent
-        #xmin = max(polygon_extent.xMinimum(), raster_extent.xMinimum())
-        #xmax = min(polygon_extent.xMaximum(), raster_extent.xMaximum())
-        #ymin = max(polygon_extent.yMinimum(), raster_extent.yMinimum())
-        #ymax = min(polygon_extent.yMaximum(), raster_extent.yMaximum())
-
-
-        # Calculate the area and determine if clipping of the raster is needed
-        # area = polygon_extent.width() * polygon_extent.height()
-
-        # Ensure the expanded polygon extent is within the raster extent
-        #adjusted_extent = [xmin, ymax, xmax, ymin]  # Format for PROJWIN
-        #logger.debug(f"ADJUSTED Extent RAW: {adjusted_extent}")
-        
-        # Initialize paths for temporary raster files
-        #dtb_clip_raster_path = None
-        dtb_raster_resample_path = None
-        #if float(output_resolution) / area < 10 / 820000:
-        #if adjusted_extent != [polygon_extent.xMinimum(), polygon_extent.yMaximum(), polygon_extent.xMaximum(), polygon_extent.yMinimum()]:
-        #if raster_extent.contains(polygon_extent):
-        logger.debug("START raster clipping")
-        feedback.pushInfo("PROCESS - @process_raster_for_impactmap@ --> Start clipping")
+    ### START RASTER CLIP ####
+        logger.debug("@process_raster_for_impactmap@ - START raster clipping")
+        feedback.pushInfo("@process_raster_for_impactmap@ --> Start clipping")
         dtb_clip_raster_path = temp_folder / "clip_temp-raster.tif"
         # Clipping the raster to the modified extent
         processing.run("gdal:cliprasterbyextent", {
@@ -143,33 +119,44 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipp
             'OUTPUT': str(dtb_clip_raster_path)
         })
         dtb_raster_layer = QgsRasterLayer(str(dtb_clip_raster_path), "clip_temp-raster")
-        logger.debug("DONE raster clipping")
-        feedback.pushInfo("PROCESS - @process_raster_for_impactmap@ --> Done clipping")
+        if dtb_raster_layer.crs().isValid():
+            logger.debug(f"@process_raster_for_impactmap@ - CRS Description: {dtb_raster_layer.crs().description()}")
+            logger.debug(f"@process_raster_for_impactmap@ - CRS text: {dtb_raster_layer.crs().toProj()}")
+        else:
+            logger.debug(f"@process_raster_for_impactmap@ - INVALID CRS AFTER CLIP")
+        
+        logger.debug("@process_raster_for_impactmap@ - DONE raster clipping")
+        feedback.pushInfo("@process_raster_for_impactmap@ --> Done clipping")
+        
+    ### START RASTER RESAMPLE ####        
+        # Resampling the raster to the desired output resolution
+        dtb_raster_resample_path = temp_folder / "resampl_temp-raster.tif"
+        logger.debug("@process_raster_for_impactmap@ - START raster resampling")
+        feedback.pushInfo("@process_raster_for_impactmap@ --> Start resampling")
         
         # Get raster properties (columns and rows count) before resample
         n_cols = dtb_raster_layer.width()
         n_rows = dtb_raster_layer.height()
-        logger.info(f"Dtb raster cols and rows before resampling: {n_cols}, {n_rows}")
-        feedback.pushInfo(f"Dtb raster cols and rows before resampling: {n_cols}, {n_rows}")
-        # Resampling the raster to the desired output resolution
-        dtb_raster_resample_path = temp_folder / "resampl_temp-raster.tif"
-        logger.debug("START raster resampling")
+        logger.info(f"@process_raster_for_impactmap@ - Before resampling: {n_cols} cols, {n_rows} rows")
+        feedback.pushInfo(f"@process_raster_for_impactmap@ - Before resampling: {n_cols} cols, {n_rows} rows")
+        
         processing.run("gdal:warpreproject", {
             'INPUT': dtb_raster_layer.source(),
-            'TARGET_CRS': dtb_raster_layer.crs().authid(),
+            'SOURCE_CRS': dtb_raster_layer.crs(),
+            'TARGET_CRS': output_crs.authid(),
             'RESAMPLING': 0,  # 0 for Nearest Neighbour
             'TARGET_RESOLUTION': output_resolution,
             'OUTPUT': str(dtb_raster_resample_path)
         })
         dtb_raster_layer = QgsRasterLayer(str(dtb_raster_resample_path), "resampl_temp-raster")
-        logger.debug("DONE raster resampling")
-
-        # Get raster properties (columns and rows count) after resample
-        n_cols = dtb_raster_layer.width()
-        n_rows = dtb_raster_layer.height()
-        logger.info(f"Dtb raster cols and rows after resampling: {n_cols}, {n_rows}")
-        feedback.pushInfo(f"Dtb raster cols and rows after resampling: {n_cols}, {n_rows}")
-
+        if dtb_raster_layer.crs().isValid():
+            logger.debug(f"@process_raster_for_impactmap@ - CRS Description: {dtb_raster_layer.crs().description()}")
+            logger.debug(f"@process_raster_for_impactmap@ - CRS text: {dtb_raster_layer.crs().toProj()}")
+        else:
+            logger.debug(f"@process_raster_for_impactmap@ - INVALID CRS AFTER RESAMPLE")
+        logger.debug("@process_raster_for_impactmap@ DONE raster resampling")
+        feedback.pushInfo("@process_raster_for_impactmap@ --> Done resampling")
+    
         # Convert to TIFF if needed
         dtb_raster_tiff = output_folder / "dtb_raster.tif"
         if not dtb_raster_layer.source().endswith(('.tif', '.tiff')): #checks a tuple
@@ -205,62 +192,6 @@ def get_intersected_extent(polygon_extent, raster_extent, clipping_range):
     # Intersect with the raster extent
     expanded_extent.intersect(raster_extent)
     return expanded_extent
-    
-def add_layer_to_qgis(layer_path, layer_name, style_path, group_name=None, logger=None):
-    """
-    Adds a layer (vector or raster) to QGIS with a specified style, and optionally adds it to a specified group.
-
-    Parameters:
-    layer_path (str): Path to the layer file.
-    layer_name (str): Name for the layer in QGIS.
-    style_path (str): Path to the QML style file.
-    group_name (str, optional): Name of the group to add the layer to. If None, the layer is added without a group.
-    logger (logging.Logger, optional): Logger for logging messages.
-
-    Returns:
-    bool: True if the layer is added successfully, False otherwise.
-    """
-
-    # Determine layer type (raster or vector) based on file extension
-    if layer_path.endswith('.tif') or layer_path.endswith('.tiff'):
-        layer = QgsRasterLayer(layer_path, f'{layer_name}')
-        logger.info(f"Loaded RASTER layer to style it: {layer}")
-    else:
-        layer = QgsVectorLayer(layer_path, f'{layer_name}', 'ogr')
-        logger.info(f"Loaded VECTOR layer to style it: {layer}")
-
-    if not layer.isValid():
-        if logger:
-            logger.debug(f"Failed to load layer: {layer_path}")
-        return False
-
-    # Apply the style
-    layer.loadNamedStyle(style_path)
-    logger.info(f"Loaded style on this path: {style_path}")
-    layer.triggerRepaint()
-
-    # Get the root of the layer tree
-    root = QgsProject.instance().layerTreeRoot()
-
-    # Add layer to group if group_name is specified
-    if group_name:
-        group = root.findGroup(group_name)
-        if not group:
-            #group = root.insertGroup(0, group_name)
-            group = QgsLayerTreeGroup(group_name)
-            root.insertChildNode(0, group)
-            logger.info(f"Created group node with name: {group.name()}")
-
-        QgsProject.instance().addMapLayer(layer, False)  # False means do not add to the layer tree root
-        node_layer = QgsLayerTreeLayer(layer)
-        group.insertChildNode(1, node_layer)
-        #group.addLayer(layer)
-        logger.info(f"Added {layer} to group: {group.name()}")
-    else:
-        QgsProject.instance().addMapLayer(layer, True)  # Add layer directly to the layer tree
-        logger.info(f"No group prensen. Directly add layer: {layer}")
-
-    return True
 
 def map_porepressure_curve_names(curve_name):
         """
