@@ -29,10 +29,6 @@ from pathlib import Path
 from typing import Union
 import shutil
 
-if Qgis.QGIS_VERSION_INT < 33200:
-    import tempfile
-    QGIS_VERSION = Qgis.QGIS_VERSION_INT
-
 def get_shapefile_as_json_pyqgis(layer, logger=None):
         if logger is not None:
             logger.debug("@get_shapefile_as_json_pyqgis@: ShapeFN id: {}".format(layer.id()))
@@ -95,13 +91,8 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipp
     Returns:
     - Path: Path object of the processed raster in TIFF format.
     """
-    # Check if the running version of QGIS is lower than the requirement
-    if QGIS_VERSION < 33200:
-        # Create a temporary directory using Python's tempfile module
-        temp_dir = tempfile.mkdtemp()
-        temp_folder = Path(temp_dir)
-    else:
-        temp_folder = Path(QgsProcessingContext.temporaryFolder(context) if context else QgsProcessingUtils.tempFolder())
+    # Check if the running version of QGIS is lower than the requirement, and create temp_folder based on that
+    temp_folder = create_temp_folder_for_version(Qgis.QGIS_VERSION_INT, context if context else None)
     
     # Prepare processing context and feedback
     if not context:
@@ -268,13 +259,8 @@ def reproject_layers(keep_interm_layer: bool,
     Returns:
     - Tuple: (reprojected_vector_path, reprojected_raster_path) Paths to the reprojected layers.
     """
-    # Check if the running version of QGIS is lower than the requirement
-    if QGIS_VERSION < 33200:
-        # Create a temporary directory using Python's tempfile module
-        temp_dir = tempfile.mkdtemp()
-        temp_folder = Path(temp_dir)
-    else:
-        temp_folder = Path(QgsProcessingContext.temporaryFolder(context) if context else QgsProcessingUtils.tempFolder())
+    # Check if the running version of QGIS is lower than the requirement, and create temp_folder based on that
+    temp_folder = create_temp_folder_for_version(Qgis.QGIS_VERSION_INT, context if context else None)
 
     # Prepare processing context and feedback
     if not context:
@@ -358,3 +344,23 @@ def move_file_components(original_file_path: Path, destination_file_path: Path):
         dest_file = destination_folder / (destination_base_name + ext)
         if src_file.exists():
             shutil.move(str(src_file), str(dest_file))
+            
+def create_temp_folder_for_version(qgis_version_int : int, context: QgsProcessingContext = None) -> Path:
+    """
+    Creates a temporary folder based on the QGIS version.
+
+    Args:
+        qgis_version_int  (int): The integer representation of the QGIS version.
+        context (QgsProcessingContext, optional): The context for processing. Default is None.
+
+    Returns:
+        Path: The path to the temporary folder.
+    """
+    # Check if the running version of QGIS is lower than the requirement
+    if qgis_version_int >= 33200 and context is not None:
+        # For QGIS versions 3.32.0 and above
+        temp_folder = context.temporaryFolder()
+    else:
+        # For older versions, or if no context is provided, use the global Processing temporary folder
+        temp_folder = QgsProcessingUtils.tempFolder()
+    return Path(temp_folder)
