@@ -382,11 +382,17 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
     def processAlgorithm(self, parameters, context, feedback):
         """
         Here is where the processing itself takes place.
-        """
+        """        
         bShortterm = self.parameterAsBoolean(parameters, self.SHORT_TERM_SETTLEMENT[0], context)
         self.logger.info(f"PROCESS - bShortterm value: {bShortterm}")
         bLongterm = self.parameterAsBoolean(parameters, self.LONG_TERM_SETTLEMENT[0], context)
         self.logger.info(f"PROCESS - bLongterm value: {bLongterm}")
+        if not bShortterm and not bLongterm:
+            error_msg = "Please choose Short term or Long term settlements, or both"
+            self.logger.error(error_msg)
+            feedback.reportError(error_msg)
+            return {}
+        
         bVulnerability = self.parameterAsBoolean(parameters, self.VULNERABILITY_ANALYSIS[0], context)
         self.logger.info(f"PROCESS - bVulnerability value: {bVulnerability}")
         bIntermediate = self.parameterAsBoolean(parameters, self.INTERMEDIATE_LAYERS[0], context)
@@ -446,13 +452,6 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         self.logger.info(f"PROCESS - JSON structure: {source_tunnel_poly_as_json}")
             
         feedback.setProgress(30)
-        
-        if not bShortterm and not bLongterm:
-            error_msg = "Please choose Short term or Long term settlements, or both"
-            self.logger.error(error_msg)
-            feedback.reportError(error_msg)
-            return {}
-        
         if bShortterm:
             tunnel_depth = self.parameterAsDouble(parameters, self.TUNNEL_DEPTH[0], context)
             tunnel_diameter = self.parameterAsDouble(parameters, self.TUNNEL_DIAM[0], context)
@@ -463,14 +462,14 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
             tunnel_diameter = None
             volume_loss = None
             trough_width = None
-        
+            
+        source_raster_rock_surface = self.parameterAsRasterLayer(parameters, self.RASTER_ROCK_SURFACE[0], context )
+        self.logger.info(f"PROCESS - Rock raster DTM: {source_raster_rock_surface}")
         if bLongterm:
             self.logger.info(f"PROCESS - ######## LONGTERM ########")
             self.logger.info(f"PROCESS - Defining long term input")
             
         ############### HANDELING OF INPUT RASTER ################
-            source_raster_rock_surface = self.parameterAsRasterLayer(parameters, self.RASTER_ROCK_SURFACE[0], context )
-            self.logger.info(f"PROCESS - Rock raster DTM: {source_raster_rock_surface}")
             if source_raster_rock_surface is not None:
                 ############### RASTER REPROJECT ################
                 if reproject_is_needed(source_raster_rock_surface, output_proj):
@@ -499,7 +498,7 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
             porewp_calc_type_english = self.CURVES_enum_porepressure[porepressure_index]
             porewp_calc_type = map_porepressure_curve_names(porewp_calc_type_english)
             tunnel_leakage = self.parameterAsDouble(parameters, self.TUNNEL_LEAKAGE[0], context)
-            porewp_red_at_site = self.parameterAsDouble(parameters, self.POREPRESSURE_REDUCTION[0], context)
+            porewp_red_at_site = self.parameterAsInt(parameters, self.POREPRESSURE_REDUCTION[0], context)
             dry_crust_thk = self.parameterAsDouble(parameters, self.DRY_CRUST_THICKNESS[0], context)
             dep_groundwater = self.parameterAsDouble(parameters, self.DEPTH_GROUNDWATER[0], context)
             density_sat = self.parameterAsDouble(parameters, self.SOIL_DENSITY[0], context)
@@ -543,7 +542,8 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         #################  LOG PROJECTIONS #################
         feedback.pushInfo(f"PROCESS - CRS BUILDINGS-vector: {source_building_poly.crs().postgisSrid()}")
         feedback.pushInfo(f"PROCESS - CRS EXCAVATION-vector: {source_tunnel_poly.crs().postgisSrid()}")
-        feedback.pushInfo(f"PROCESS - CRS DTB-raster: {source_raster_rock_surface.crs().postgisSrid()}")
+        if source_raster_rock_surface is not None:
+            feedback.pushInfo(f"PROCESS - CRS DTB-raster: {source_raster_rock_surface.crs().postgisSrid()}")
         
         ###### FEEDBACK ALL PARAMETERS #########
         feedback.pushInfo("PROCESS - Running mainBegrensSkade_Excavation...")
