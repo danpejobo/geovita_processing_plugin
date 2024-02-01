@@ -91,13 +91,15 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipp
     Returns:
     - Path: Path object of the processed raster in TIFF format.
     """
-    # Check if the running version of QGIS is lower than the requirement, and create temp_folder based on that
-    temp_folder = create_temp_folder_for_version(Qgis.QGIS_VERSION_INT, context if context else None)
+
     
     # Prepare processing context and feedback
     if not context:
         context = QgsProcessingContext()
     feedback = context.feedback() if context else QgsProcessingFeedback()
+    
+    # Check if the running version of QGIS is lower than the requirement, and create temp_folder based on that
+    temp_folder = create_temp_folder_for_version(Qgis.QGIS_VERSION_INT, context)
     
     for feature in source_excavation_poly.getFeatures():
         geom = feature.geometry()
@@ -259,13 +261,13 @@ def reproject_layers(keep_interm_layer: bool,
     Returns:
     - Tuple: (reprojected_vector_path, reprojected_raster_path) Paths to the reprojected layers.
     """
-    # Check if the running version of QGIS is lower than the requirement, and create temp_folder based on that
-    temp_folder = create_temp_folder_for_version(Qgis.QGIS_VERSION_INT, context if context else None)
-
     # Prepare processing context and feedback
     if not context:
         context = QgsProcessingContext()
     feedback = context.feedback() if context else QgsProcessingFeedback()
+    
+    # Check if the running version of QGIS is lower than the requirement, and create temp_folder based on that
+    temp_folder = create_temp_folder_for_version(Qgis.QGIS_VERSION_INT, context)
     
     # Initialize reprojected layer variables
     reprojected_vector_layer = None
@@ -359,8 +361,11 @@ def create_temp_folder_for_version(qgis_version_int : int, context: QgsProcessin
     # Check if the running version of QGIS is lower than the requirement
     if qgis_version_int >= 33200 and context is not None:
         # For QGIS versions 3.32.0 and above
-        temp_folder = context.temporaryFolder()
+        temp_folder = Path(context.temporaryFolder())
+        temp_folder.mkdir(parents=True, exist_ok=True)
     else:
         # For older versions, or if no context is provided, use the global Processing temporary folder
-        temp_folder = QgsProcessingUtils.tempFolder()
-    return Path(temp_folder)
+        temp_folder = Path(QgsProcessingUtils.tempFolder())
+        temp_folder.mkdir(parents=True, exist_ok=True)
+        
+    return temp_folder

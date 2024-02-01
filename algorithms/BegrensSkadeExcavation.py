@@ -420,6 +420,12 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         )
         self.logger.info(f"PROCESS - bLongterm value: {bLongterm}")
         
+        if not bShortterm and not bLongterm:
+            error_msg = "Please choose Short term or Long term settlements, or both"
+            self.logger.error(error_msg)
+            feedback.reportError(error_msg)
+            return {}
+        
         bVulnerability = self.parameterAsBoolean(
             parameters,
             self.VULNERABILITY_ANALYSIS[0],
@@ -490,13 +496,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         #source_excavation_poly_as_json = Utils.getShapefileAsJson(path_source_excavation_poly, logger)
         self.logger.info(f"PROCESS - JSON structure: {source_excavation_poly_as_json}")
             
-        feedback.setProgress(30)
-        if not bShortterm and not bLongterm:
-            error_msg = "Please choose Short term or Long term settlements, or both"
-            self.logger.error(error_msg)
-            feedback.reportError(error_msg)
-            return {}
-        
+        feedback.setProgress(30)        
         if bShortterm:
             self.logger.info(f"PROCESS - ######## SHORTTERM ########")
             self.logger.info(f"PROCESS - Defining short term input")
@@ -514,14 +514,14 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         else:
             excavation_depth = None
             short_term_curve = None
-        
+            
+        source_raster_rock_surface = self.parameterAsRasterLayer(parameters, self.RASTER_ROCK_SURFACE[0], context )
+        self.logger.info(f"PROCESS - Rock raster DTM: {source_raster_rock_surface}")
         if bLongterm:
             self.logger.info(f"PROCESS - ######## LONGTERM ########")
             self.logger.info(f"PROCESS - Defining long term input")
 
         ############### HANDELING OF INPUT RASTER ################
-            source_raster_rock_surface = self.parameterAsRasterLayer(parameters, self.RASTER_ROCK_SURFACE[0], context )
-            self.logger.info(f"PROCESS - Rock raster DTM: {source_raster_rock_surface}")
             if source_raster_rock_surface is not None:
             ############### RASTER REPROJECT ################
                 if reproject_is_needed(source_raster_rock_surface, output_proj):
@@ -596,7 +596,8 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         #################  LOG PROJECTIONS #################
         feedback.pushInfo(f"PROCESS - CRS BUILDINGS-vector: {source_building_poly.crs().postgisSrid()}")
         feedback.pushInfo(f"PROCESS - CRS EXCAVATION-vector: {source_excavation_poly.crs().postgisSrid()}")
-        feedback.pushInfo(f"PROCESS - CRS DTB-raster: {source_raster_rock_surface.crs().postgisSrid()}")
+        if source_raster_rock_surface is not None:
+            feedback.pushInfo(f"PROCESS - CRS DTB-raster: {source_raster_rock_surface.crs().postgisSrid()}")
             
         ###### FEEDBACK ALL PARAMETERS #########
         feedback.pushInfo("PROCESS - Running mainBegrensSkade_Excavation...")
