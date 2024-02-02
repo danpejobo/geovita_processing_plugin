@@ -52,6 +52,10 @@ jobs:
           docker exec qgis-testing-environment sh -c "pip3 install -r /tests_directory/$PLUGIN_NAME/REQUIREMENTS_TESTING.txt"
           # docker exec qgis-testing-environment sh -c "apt-get update"
           # docker exec qgis-testing-environment sh -c "apt-get install -y python3-pyqt5.qtwebkit"
+      
+      - name: List content of plugin directory
+        run: |
+          docker exec qgis-testing-environment ls -la /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins
 
       - name: Docker run plugin tests
         run: |
