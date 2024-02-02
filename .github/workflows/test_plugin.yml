@@ -55,7 +55,7 @@ jobs:
       
       - name: Prepare REMEDY_GIS_RiskTool submodule
         run: |
-          touch $GITHUB_WORKSPACE/geovita_processing_plugin/REMEDY_GIS_RiskTool/__init__.py
+          docker exec qgis-testing-environment sh -c touch /tests_directory/$PLUGIN_NAME/REMEDY_GIS_RiskTool/__init__.py
 
       - name: Docker run plugin tests
         run: |
