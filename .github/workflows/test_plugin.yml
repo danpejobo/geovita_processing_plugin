@@ -9,6 +9,7 @@ on:
     paths:
     - "geovita_processing_plugin/**"
     - ".github/workflows/test_plugin.yaml"
+  workflow_dispatch:
 
 env:
   # plugin name/directory where the code for the plugin is stored
