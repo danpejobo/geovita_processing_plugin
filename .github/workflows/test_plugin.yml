@@ -53,9 +53,9 @@ jobs:
           # docker exec qgis-testing-environment sh -c "apt-get update"
           # docker exec qgis-testing-environment sh -c "apt-get install -y python3-pyqt5.qtwebkit"
       
-      - name: List content of plugin directory
+      - name: Prepare REMEDY_GIS_RiskTool submodule
         run: |
-          docker exec qgis-testing-environment ls -la /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins
+          touch $GITHUB_WORKSPACE/geovita_processing_plugin/REMEDY_GIS_RiskTool/__init__.py
 
       - name: Docker run plugin tests
         run: |
