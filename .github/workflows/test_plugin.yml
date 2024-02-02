@@ -38,7 +38,7 @@ jobs:
       - name: Docker pull and create qgis-testing-environment
         run: |
           docker pull "$DOCKER_IMAGE":${{ matrix.docker_tags }}
-          docker run -d --name qgis-testing-environment -v ${{ github.workspace }}:/tests_directory -e DISPLAY=:99 "$DOCKER_IMAGE":${{ matrix.docker_tags }}
+          docker run -d --name qgis-testing-environment -v "$PLUGIN_NAME"/${{ github.workspace }}:/tests_directory -e DISPLAY=:99 "$DOCKER_IMAGE":${{ matrix.docker_tags }}
       
       - name: List mounted directory contents
         run: |
