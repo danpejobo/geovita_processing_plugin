@@ -39,11 +39,7 @@ class QGISTest(unittest.TestCase):
         """Test that QGIS properly parses a wkt string.
         """
         crs = QgsCoordinateReferenceSystem()
-        wkt = (
-            'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",'
-            'SPHEROID["WGS_1984",6378137.0,298.257223563]],'
-            'PRIMEM["Greenwich",0.0],UNIT["Degree",'
-            '0.0174532925199433]]')
+        wkt = ('GEOGCRS["WGS 84",ENSEMBLE["World Geodetic System 1984 ensemble", MEMBER["World Geodetic System 1984 (Transit)", ID["EPSG",1166]], MEMBER["World Geodetic System 1984 (G730)", ID["EPSG",1152]], MEMBER["World Geodetic System 1984 (G873)", ID["EPSG",1153]], MEMBER["World Geodetic System 1984 (G1150)", ID["EPSG",1154]], MEMBER["World Geodetic System 1984 (G1674)", ID["EPSG",1155]], MEMBER["World Geodetic System 1984 (G1762)", ID["EPSG",1156]], MEMBER["World Geodetic System 1984 (G2139)", ID["EPSG",1309]], ELLIPSOID["WGS 84",6378137,298.257223563,LENGTHUNIT["metre",1,ID["EPSG",9001]],ID["EPSG",7030]], ENSEMBLEACCURACY[2],ID["EPSG",6326]],CS[ellipsoidal,2,ID["EPSG",6422]],AXIS["Geodetic latitude (Lat)",north],AXIS["Geodetic longitude (Lon)",east],ANGLEUNIT["degree",0.0174532925199433,ID["EPSG",9102]],ID["EPSG",4326]]')
         crs.createFromWkt(wkt)
         auth_id = crs.authid()
         expected_auth_id = 'EPSG:4326'
