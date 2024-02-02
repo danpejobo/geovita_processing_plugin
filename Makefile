@@ -65,7 +65,7 @@ PEP8EXCLUDE=pydev,resources.py,conf.py,third_party,ui
 #	* Windows:
 #	  AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins'
 
-QGISDIR=C:\Users\dpe\AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins
+QGISDIR=.local/share/QGIS/QGIS3/profiles/default/python/plugins/
 
 #################################################
 # Normally you would not need to edit below here
@@ -231,14 +231,14 @@ pylint:
 	@echo "----------------------"
 
 
-# Run pep8 style checking
+# Run pep8/pycodestyle style checking
 #http://pypi.python.org/pypi/pep8
 pep8:
 	@echo
 	@echo "-----------"
-	@echo "PEP8 issues"
+	@echo "pycodestyle PEP8 issues"
 	@echo "-----------"
-	@pep8 --repeat --ignore=E203,E121,E122,E123,E124,E125,E126,E127,E128 --exclude $(PEP8EXCLUDE) . || true
+	@pycodestyle --repeat --ignore=E203,E121,E122,E123,E124,E125,E126,E127,E128 --exclude $(PEP8EXCLUDE) . || true
 	@echo "-----------"
 	@echo "Ignored in PEP8 check:"
 	@echo $(PEP8EXCLUDE)
