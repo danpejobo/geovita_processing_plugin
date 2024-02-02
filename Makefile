@@ -233,7 +233,7 @@ pylint:
 
 # Run pep8/pycodestyle style checking
 #http://pypi.python.org/pypi/pep8
-pep8:
+pycodestyle:
 	@echo
 	@echo "-----------"
 	@echo "pycodestyle PEP8 issues"
