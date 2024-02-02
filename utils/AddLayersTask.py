@@ -9,7 +9,7 @@ from qgis.core import (QgsTask,
 from pathlib import Path
 from datetime import datetime
 
-from utils import logger
+from . import logger
 
 class AddLayersTask(QgsTask):
     """

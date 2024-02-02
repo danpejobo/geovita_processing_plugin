@@ -42,7 +42,6 @@ jobs:
       
       - name: List mounted directory contents
         run: |
-          docker exec qgis-testing-environment ls -la /tests_directory
           docker exec qgis-testing-environment ls -la /tests_directory/$PLUGIN_NAME
 
       - name: Docker set up QGIS
