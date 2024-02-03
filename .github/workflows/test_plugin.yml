@@ -2,10 +2,16 @@ name: Test plugin
 
 on:
   push:
+    branches:
+      - main
+      - dev
     paths:
     - "geovita_processing_plugin/**"
     - ".github/workflows/test_plugin.yaml"
   pull_request:
+    branches:
+      - main
+      - dev
     paths:
     - "geovita_processing_plugin/**"
     - ".github/workflows/test_plugin.yaml"
