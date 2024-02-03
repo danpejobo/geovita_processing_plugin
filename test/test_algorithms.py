@@ -1,6 +1,6 @@
 from pathlib import Path
 import unittest
-from qgis.core import QgsApplication, QgsVectorLayer, QgsRasterLayer, QgsProcessingContext, QgsProcessingFeedback
+from qgis.core import QgsApplication, QgsVectorLayer, QgsRasterLayer, QgsProcessingContext, QgsProcessingFeedback, QgsCoordinateReferenceSystem
 from qgis.analysis import QgsNativeAlgorithms
 from qgis.PyQt.QtCore import QVariant
 from qgis.utils import plugins
@@ -37,13 +37,17 @@ class TestBegrensSkadeExcavationAlgorithm(unittest.TestCase):
         self.assertTrue(self.building_layer.isValid(), "Building layer failed to load.")
         self.assertTrue(self.excavation_layer.isValid(), "Excavation layer failed to load.")
         self.assertTrue(self.raster_rock_surface_layer.isValid(), "Raster rock surface layer failed to load.")
+        
+        #Output CRS
+        self.out_crs = QgsCoordinateReferenceSystem('EPSG:25832')
+        self.assertTrue(self.out_crs.isValid(), "OUTPUT CRS is invalid!")
 
         # Set parameters
         self.params = {
             self.algorithm.INPUT_BUILDING_POLY: self.building_layer,
             self.algorithm.INPUT_EXCAVATION_POLY: self.excavation_layer,
             self.algorithm.OUTPUT_FOLDER: str(data_dir),
-            self.algorithm.OUTPUT_CRS: 'EPSG:25832',  # Example CRS
+            self.algorithm.OUTPUT_CRS: self.out_crs,  # Example CRS
             self.algorithm.SHORT_TERM_SETTLEMENT[0]: True,
             self.algorithm.EXCAVATION_DEPTH[0]: 10.0,
             self.algorithm.SETTLEMENT_ENUM[0]: 1,  # Assuming enum index
@@ -64,7 +68,7 @@ class TestBegrensSkadeExcavationAlgorithm(unittest.TestCase):
             self.algorithm.FILED_NAME_BUILDING_STRUCTURE[0]: 'Structure',  # Example field name
             self.algorithm.FILED_NAME_BUILDING_STATUS[0]: 'Condition',  # Example field name
             self.algorithm.INTERMEDIATE_LAYERS[0]: False,
-            self.algorithm.OUTPUT_FEATURE_NAME: 'test_output-all'
+            self.algorithm.OUTPUT_FEATURE_NAME: 'test_output-exca-all'
         }
 
     def test_algorithm_execution(self):
