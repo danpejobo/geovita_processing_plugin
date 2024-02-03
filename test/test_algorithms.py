@@ -3,8 +3,9 @@ import unittest
 from qgis.core import QgsApplication, QgsVectorLayer, QgsRasterLayer, QgsProcessingContext, QgsProcessingFeedback
 from qgis.analysis import QgsNativeAlgorithms
 from qgis.PyQt.QtCore import QVariant
-from algorithms.BegrensSkadeExcavation import BegrensSkadeExcavation
 from qgis.utils import plugins
+
+from .. algorithms.BegrensSkadeExcavation import BegrensSkadeExcavation
 
 class TestBegrensSkadeExcavationAlgorithm(unittest.TestCase):
     @classmethod
