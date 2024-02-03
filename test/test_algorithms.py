@@ -1,4 +1,4 @@
-from qgis.core import (QgsApplication, QgsProcessingAlgorithm, QgsProcessingFeedback, QgsVectorLayer, QgsCoordinateReferenceSystem, QgsRasterLayer, QgsProcessingContext)
+from qgis.core import (QgsApplication, QgsProcessingFeedback, QgsVectorLayer, QgsCoordinateReferenceSystem, QgsRasterLayer, QgsProcessingContext)
 from qgis.analysis import QgsNativeAlgorithms
 from qgis import processing
 from qgis.testing import unittest, start_app
