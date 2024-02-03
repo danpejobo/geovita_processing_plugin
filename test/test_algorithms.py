@@ -75,7 +75,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
 
         feedback = QgsProcessingFeedback()
         context = QgsProcessingContext()
-        results = processing.run("geovita:begrensskadeexcavation", self.params, feedback=feedback, context=context)
+        results = processing.run("remedygisrisktool:begrensskadeexcavation", self.params, feedback=feedback, context=context)
 
         # Verify results
         # For example, check if output shapefiles exist
