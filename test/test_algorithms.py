@@ -47,13 +47,13 @@ class TestBegrensSkadeExcavationAlgorithm(unittest.TestCase):
             self.algorithm.INPUT_BUILDING_POLY: self.building_layer,
             self.algorithm.INPUT_EXCAVATION_POLY: self.excavation_layer,
             self.algorithm.OUTPUT_FOLDER: str(data_dir),
-            self.algorithm.OUTPUT_CRS: self.out_crs,  # Example CRS
+            self.algorithm.OUTPUT_CRS: self.out_crs,
             self.algorithm.SHORT_TERM_SETTLEMENT[0]: True,
             self.algorithm.EXCAVATION_DEPTH[0]: 10.0,
-            self.algorithm.SETTLEMENT_ENUM[0]: 1,  # Assuming enum index
+            self.algorithm.SETTLEMENT_ENUM[0]: "2 % av byggegropdybde",
             self.algorithm.LONG_TERM_SETTLEMENT[0]: True,
             self.algorithm.RASTER_ROCK_SURFACE[0]: self.raster_rock_surface_layer,
-            self.algorithm.POREPRESSURE_ENUM[0]: 1,  # Assuming enum index
+            self.algorithm.POREPRESSURE_ENUM[0]: "Middels poretrykksreduksjon",
             self.algorithm.POREPRESSURE_REDUCTION[0]: 50,
             self.algorithm.DRY_CRUST_THICKNESS[0]: 2.0,
             self.algorithm.DEPTH_GROUNDWATER[0]: 3.5,
@@ -64,9 +64,9 @@ class TestBegrensSkadeExcavationAlgorithm(unittest.TestCase):
             self.algorithm.JANBU_COMP_MODULUS[0]: 15,
             self.algorithm.CONSOLIDATION_TIME[0]: 10,
             self.algorithm.VULNERABILITY_ANALYSIS[0]: True,
-            self.algorithm.FILED_NAME_BUILDING_FOUNDATION[0]: 'Foundation',  # Example field name
-            self.algorithm.FILED_NAME_BUILDING_STRUCTURE[0]: 'Structure',  # Example field name
-            self.algorithm.FILED_NAME_BUILDING_STATUS[0]: 'Condition',  # Example field name
+            self.algorithm.FILED_NAME_BUILDING_FOUNDATION[0]: 'Foundation',  # Field name
+            self.algorithm.FILED_NAME_BUILDING_STRUCTURE[0]: 'Structure',  # Field name
+            self.algorithm.FILED_NAME_BUILDING_STATUS[0]: 'Condition',  # Field name
             self.algorithm.INTERMEDIATE_LAYERS[0]: False,
             self.algorithm.OUTPUT_FEATURE_NAME: 'test_output-exca-all'
         }
