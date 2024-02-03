@@ -26,7 +26,7 @@ class TestBegrensSkadeExcavationAlgorithm(unittest.TestCase):
         # Construct paths to your test datasets within the data directory
         building_layer_path = data_dir / 'bygninger.shp'
         excavation_layer_path = data_dir / 'byggegrop.shp'
-        raster_rock_surface_path = data_dir / 'DTB-dummy-25833'
+        raster_rock_surface_path = data_dir / 'DTB-dummy-25833-clip.tif'
 
         # Assuming these layers exist for testing purposes
         self.building_layer = QgsVectorLayer(str(building_layer_path), 'test_building', 'ogr')
