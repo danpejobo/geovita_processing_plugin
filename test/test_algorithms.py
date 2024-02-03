@@ -74,13 +74,26 @@ class TestBegrensSkadeExcavationAlgorithm(unittest.TestCase):
     def test_algorithm_execution(self):
         context = QgsProcessingContext()
         feedback = QgsProcessingFeedback()
-
-        results = self.algorithm.run(self.params, context, feedback)
         
+        try:
+            results = self.algorithm.run(self.params, context, feedback)
+            
+            # Assuming you want to check that the output files exist
+            expected_outputs = ['OUTPUT_BUILDING', 'OUTPUT_CORNER', 'OUTPUT_WALL']
+            for output_key in expected_outputs:
+                self.assertIn(output_key, results)
+                output_path = results[output_key]
+                self.assertTrue(Path(output_path).exists(), f"{output_key} output file does not exist: {output_path}")
+        except Exception as e:
+            # Log the exception or do additional cleanup here
+            print(f"Error executing algorithm: {e}")
+            # Make sure to fail the test if an exception is caught
+            self.fail(f"Algorithm execution raised an exception: {e}")
+            
         # Validate the results
-        self.assertIn(self.algorithm.OUTPUT_BUILDING, results)
-        self.assertIn(self.algorithm.OUTPUT_WALL, results)
-        self.assertIn(self.algorithm.OUTPUT_CORNER, results)
+        #self.assertIn(self.algorithm.OUTPUT_BUILDING, results)
+        #self.assertIn(self.algorithm.OUTPUT_WALL, results)
+        #self.assertIn(self.algorithm.OUTPUT_CORNER, results)
 
         # Further checks can be added here to inspect the contents of the output shapefiles
 
