@@ -69,13 +69,26 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
             'INTERMEDIATE_LAYERS': False,
             'OUTPUT_FEATURE_NAME': 'test_output-exca-all'
         }
+    
+    def test_algorithm_loaded(self):
+        # This flag will help us determine if any relevant algorithms were found
+        found_relevant_algorithms = False
+
+        for alg in QgsApplication.processingRegistry().algorithms():
+            # Check if the algorithm ID starts with "geovita"
+            if alg.id().startswith("geovita"):
+                print(alg.id(), alg.displayName())
+                found_relevant_algorithms = True
+
+        # Assert that at least one relevant algorithm was found
+        self.assertTrue(found_relevant_algorithms, "No algorithms under 'geovita' were found.")
 
     def test_algorithm_execution(self):
         """Test executing the BegrensSkadeExcavation algorithm with a basic set of parameters."""
 
         feedback = QgsProcessingFeedback()
         context = QgsProcessingContext()
-        results = processing.run("remedygisrisktool:begrensskadeexcavation", self.params, feedback=feedback, context=context)
+        results = processing.run("geovita:begrensskadeexcavation", self.params, feedback=feedback, context=context)
 
         # Verify results
         # For example, check if output shapefiles exist
