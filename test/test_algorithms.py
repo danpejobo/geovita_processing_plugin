@@ -51,7 +51,7 @@ class TestBegrensSkadeExcavationAlgorithm(unittest.TestCase):
             self.algorithm.SHORT_TERM_SETTLEMENT[0]: True,
             self.algorithm.EXCAVATION_DEPTH[0]: 10.0,
             self.algorithm.SETTLEMENT_ENUM[0]: "2 % av byggegropdybde",
-            self.algorithm.LONG_TERM_SETTLEMENT[0]: True,
+            self.algorithm.LONG_TERM_SETTLEMENT[0]: False,
             self.algorithm.RASTER_ROCK_SURFACE[0]: self.raster_rock_surface_layer,
             self.algorithm.POREPRESSURE_ENUM[0]: "Middels poretrykksreduksjon",
             self.algorithm.POREPRESSURE_REDUCTION[0]: 50,
@@ -63,7 +63,7 @@ class TestBegrensSkadeExcavationAlgorithm(unittest.TestCase):
             self.algorithm.JANBU_CONSTANT[0]: 0.02,
             self.algorithm.JANBU_COMP_MODULUS[0]: 15,
             self.algorithm.CONSOLIDATION_TIME[0]: 10,
-            self.algorithm.VULNERABILITY_ANALYSIS[0]: True,
+            self.algorithm.VULNERABILITY_ANALYSIS[0]: False,
             self.algorithm.FILED_NAME_BUILDING_FOUNDATION[0]: 'Foundation',  # Field name
             self.algorithm.FILED_NAME_BUILDING_STRUCTURE[0]: 'Structure',  # Field name
             self.algorithm.FILED_NAME_BUILDING_STATUS[0]: 'Condition',  # Field name
