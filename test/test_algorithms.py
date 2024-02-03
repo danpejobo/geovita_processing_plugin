@@ -1,37 +1,36 @@
-from pathlib import Path
-import unittest
-from qgis.core import QgsApplication, QgsVectorLayer, QgsRasterLayer, QgsProcessingContext, QgsProcessingFeedback, QgsCoordinateReferenceSystem
+from qgis.core import (QgsApplication, QgsProcessingAlgorithm, QgsProcessingFeedback, QgsVectorLayer, QgsCoordinateReferenceSystem, QgsRasterLayer, QgsProcessingContext)
 from qgis.analysis import QgsNativeAlgorithms
-from qgis.PyQt.QtCore import QVariant
-from qgis.utils import plugins
+from qgis import processing
+from qgis.testing import unittest, start_app
+from pathlib import Path
 
-from .. algorithms.BegrensSkadeExcavation import BegrensSkadeExcavation
+start_app()  # Start a QGIS application instance
 
-class TestBegrensSkadeExcavationAlgorithm(unittest.TestCase):
+class TestBegrensSkadeExcavation(unittest.TestCase):
+
     @classmethod
     def setUpClass(cls):
-        # Initialize QGIS Application for testing
-        QgsApplication.initQgis()
-        # Register algorithms
+        """Initialize processing and load your plugin."""
+        cls.qgis_app = QgsApplication([], False)
+        cls.qgis_app.initQgis()
         QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
+        # Optionally, load your plugin here if it's not automatically detected
 
-    def setUp(self):
-        self.algorithm = BegrensSkadeExcavation()
-        
+    def setUp(self):        
         # Use pathlib to get the current directory (where this test file resides)
         current_dir = Path(__file__).parent
         # Define the path to the data directory relative to this file
         data_dir = current_dir / 'data'
         
         # Construct paths to your test datasets within the data directory
-        building_layer_path = data_dir / 'bygninger.shp'
-        excavation_layer_path = data_dir / 'byggegrop.shp'
-        raster_rock_surface_path = data_dir / 'DTB-dummy-25833-clip.tif'
+        self.building_layer_path = data_dir / 'bygninger.shp'
+        self.excavation_layer_path = data_dir / 'byggegrop.shp'
+        self.raster_rock_surface_path = data_dir / 'DTB-dummy-25833-clip.tif'
 
         # Assuming these layers exist for testing purposes
-        self.building_layer = QgsVectorLayer(str(building_layer_path), 'test_building', 'ogr')
-        self.excavation_layer = QgsVectorLayer(str(excavation_layer_path), 'test_excavation', 'ogr')
-        self.raster_rock_surface_layer = QgsRasterLayer(str(raster_rock_surface_path), 'test_raster_rock_surface')
+        self.building_layer = QgsVectorLayer(str(self.building_layer_path), 'test_building', 'ogr')
+        self.excavation_layer = QgsVectorLayer(str(self.excavation_layer_path), 'test_excavation', 'ogr')
+        self.raster_rock_surface_layer = QgsRasterLayer(str(self.raster_rock_surface_path), 'test_raster_rock_surface')
 
         # Ensure layers are valid
         self.assertTrue(self.building_layer.isValid(), "Building layer failed to load.")
@@ -41,65 +40,55 @@ class TestBegrensSkadeExcavationAlgorithm(unittest.TestCase):
         #Output CRS
         self.out_crs = QgsCoordinateReferenceSystem('EPSG:25832')
         self.assertTrue(self.out_crs.isValid(), "OUTPUT CRS is invalid!")
-
-        # Set parameters
+        
+        # # Set parameters
         self.params = {
-            self.algorithm.INPUT_BUILDING_POLY: self.building_layer,
-            self.algorithm.INPUT_EXCAVATION_POLY: self.excavation_layer,
-            self.algorithm.OUTPUT_FOLDER: str(data_dir),
-            self.algorithm.OUTPUT_CRS: self.out_crs,
-            self.algorithm.SHORT_TERM_SETTLEMENT[0]: True,
-            self.algorithm.EXCAVATION_DEPTH[0]: 10.0,
-            self.algorithm.SETTLEMENT_ENUM[0]: "2 % av byggegropdybde",
-            self.algorithm.LONG_TERM_SETTLEMENT[0]: False,
-            self.algorithm.RASTER_ROCK_SURFACE[0]: self.raster_rock_surface_layer,
-            self.algorithm.POREPRESSURE_ENUM[0]: "Middels poretrykksreduksjon",
-            self.algorithm.POREPRESSURE_REDUCTION[0]: 50,
-            self.algorithm.DRY_CRUST_THICKNESS[0]: 2.0,
-            self.algorithm.DEPTH_GROUNDWATER[0]: 3.5,
-            self.algorithm.SOIL_DENSITY[0]: 18.5,
-            self.algorithm.OCR[0]: 1.2,
-            self.algorithm.JANBU_REF_STRESS[0]: 100,
-            self.algorithm.JANBU_CONSTANT[0]: 0.02,
-            self.algorithm.JANBU_COMP_MODULUS[0]: 15,
-            self.algorithm.CONSOLIDATION_TIME[0]: 10,
-            self.algorithm.VULNERABILITY_ANALYSIS[0]: False,
-            self.algorithm.FILED_NAME_BUILDING_FOUNDATION[0]: 'Foundation',  # Field name
-            self.algorithm.FILED_NAME_BUILDING_STRUCTURE[0]: 'Structure',  # Field name
-            self.algorithm.FILED_NAME_BUILDING_STATUS[0]: 'Condition',  # Field name
-            self.algorithm.INTERMEDIATE_LAYERS[0]: False,
-            self.algorithm.OUTPUT_FEATURE_NAME: 'test_output-exca-all'
+            'INPUT_BUILDING_POLY': self.building_layer,
+            'INPUT_EXCAVATION_POLY': self.excavation_layer,
+            'OUTPUT_FOLDER': str(data_dir),
+            'OUTPUT_CRS': self.out_crs,
+            'SHORT_TERM_SETTLEMENT': True,
+            'EXCAVATION_DEPTH': 10.0,
+            'SETTLEMENT_ENUM': 1, #index
+            'LONG_TERM_SETTLEMENT': False,
+            'RASTER_ROCK_SURFACE': self.raster_rock_surface_layer,
+            'POREPRESSURE_ENUM': 1, #index
+            'POREPRESSURE_REDUCTION': 50,
+            'DRY_CRUST_THICKNESS': 2.0,
+            'DEPTH_GROUNDWATER': 3.5,
+            'SOIL_DENSITY': 18.5,
+            'OCR': 1.2,
+            'JANBU_REF_STRESS': 100,
+            'JANBU_CONSTANT': 0.02,
+            'JANBU_COMP_MODULUS': 15,
+            'CONSOLIDATION_TIME': 10,
+            'VULNERABILITY_ANALYSIS': False,
+            'FILED_NAME_BUILDING_FOUNDATION': 'Foundation',  # Field name
+            'FILED_NAME_BUILDING_STRUCTURE': 'Structure',  # Field name
+            'FILED_NAME_BUILDING_STATUS': 'Condition',  # Field name
+            'INTERMEDIATE_LAYERS': False,
+            'OUTPUT_FEATURE_NAME': 'test_output-exca-all'
         }
 
     def test_algorithm_execution(self):
-        context = QgsProcessingContext()
-        feedback = QgsProcessingFeedback()
-        
-        try:
-            results = self.algorithm.run(self.params, context, feedback)
-            
-            # Assuming you want to check that the output files exist
-            expected_outputs = ['OUTPUT_BUILDING', 'OUTPUT_CORNER', 'OUTPUT_WALL']
-            for output_key in expected_outputs:
-                self.assertIn(output_key, results)
-                output_path = results[output_key]
-                self.assertTrue(Path(output_path).exists(), f"{output_key} output file does not exist: {output_path}")
-        except Exception as e:
-            # Log the exception or do additional cleanup here
-            print(f"Error executing algorithm: {e}")
-            # Make sure to fail the test if an exception is caught
-            self.fail(f"Algorithm execution raised an exception: {e}")
-            
-        # Validate the results
-        #self.assertIn(self.algorithm.OUTPUT_BUILDING, results)
-        #self.assertIn(self.algorithm.OUTPUT_WALL, results)
-        #self.assertIn(self.algorithm.OUTPUT_CORNER, results)
+        """Test executing the BegrensSkadeExcavation algorithm with a basic set of parameters."""
 
-        # Further checks can be added here to inspect the contents of the output shapefiles
+        feedback = QgsProcessingFeedback()
+        context = QgsProcessingContext()
+        results = processing.run("geovita:begrensskadeexcavation", self.params, feedback=feedback, context=context)
+
+        # Verify results
+        # For example, check if output shapefiles exist
+        self.assertTrue(Path(results['OUTPUT_BUILDING']).exists())
+        self.assertTrue(Path(results['OUTPUT_WALL']).exists())
+        self.assertTrue(Path(results['OUTPUT_CORNER']).exists())
+
+        # Further checks can include verifying the contents of the output shapefiles
 
     @classmethod
     def tearDownClass(cls):
-        QgsApplication.exitQgis()
+        """Clean up after all tests are run."""
+        cls.qgis_app.exitQgis()
 
 if __name__ == '__main__':
     unittest.main()
