@@ -35,7 +35,7 @@ class QGISTest(unittest.TestCase):
         self.assertIn('ogr', r.providerList())
         self.assertIn('postgres', r.providerList())
 
-    def test_projection(self):
+    def test_re_projection(self):
         """Test that QGIS properly parses a wkt string.
         """
         crs = QgsCoordinateReferenceSystem()

@@ -19,7 +19,6 @@ env:
   # Docker settings
   DOCKER_IMAGE: qgis/qgis
 
-
 jobs:
 
   Test-geovita_processing_plugin:
@@ -58,7 +57,6 @@ jobs:
       - name: Prepare REMEDY_GIS_RiskTool submodule
         run: |
           touch ${{ github.workspace }}/REMEDY_GIS_RiskTool/__init__.py
-          ls -la ${{ github.workspace }}/REMEDY_GIS_RiskTool
 
       - name: Docker run plugin tests
         run: |
