@@ -61,9 +61,6 @@ jobs:
           
           docker exec qgis-testing-environment sh -c "ls -la /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/"
           docker exec qgis-testing-environment sh -c "ls -la /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
-          docker exec qgis-testing-environment sh -c "export PYTHONPATH=/tests_directory/\$PLUGIN_NAME:\$PYTHONPATH"
-          docker exec qgis-testing-environment sh -c "echo \$PYTHONPATH"
-
       
       - name: Prepare REMEDY_GIS_RiskTool submodule
         run: |
@@ -71,7 +68,7 @@ jobs:
 
       - name: Docker run plugin tests
         run: |
-          docker exec qgis-testing-environment sh -c "qgis_testrunner.sh $TESTS_RUN_FUNCTION"
+          docker exec qgis-testing-environment sh -c "export PYTHONPATH=/tests_directory/$PLUGIN_NAME:\$PYTHONPATH && echo \$PYTHONPATH && qgis_testrunner.sh $TESTS_RUN_FUNCTION"
 
   Check-code-quality:
     runs-on: ubuntu-latest
