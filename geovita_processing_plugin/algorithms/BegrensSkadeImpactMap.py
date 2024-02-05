@@ -52,10 +52,10 @@ import traceback
 from pathlib import Path
 
 from .base_algorithm import GvBaseProcessingAlgorithms
-from ..utils.AddLayersTask import AddLayersTask
-from ..utils.gui import GuiUtils
-from ..utils.logger import CustomLogger
-from ..utils.methodslib import get_shapefile_as_json_pyqgis, process_raster_for_impactmap, reproject_is_needed, reproject_layers
+from ..utilities.AddLayersTask import AddLayersTask
+from ..utilities.gui import GuiUtils
+from ..utilities.logger import CustomLogger
+from ..utilities.methodslib import get_shapefile_as_json_pyqgis, process_raster_for_impactmap, reproject_is_needed, reproject_layers
 
 from ..REMEDY_GIS_RiskTool.BegrensSkade import mainBegrensSkade_ImpactMap
 

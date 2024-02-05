@@ -56,10 +56,10 @@ from pathlib import Path
 
 from ..REMEDY_GIS_RiskTool.BegrensSkade import mainBegrensSkade_Tunnel
 
-from ..utils.AddLayersTask import AddLayersTask
-from ..utils.gui import GuiUtils
-from ..utils.logger import CustomLogger
-from ..utils.methodslib import (get_shapefile_as_json_pyqgis,
+from ..utilities.AddLayersTask import AddLayersTask
+from ..utilities.gui import GuiUtils
+from ..utilities.logger import CustomLogger
+from ..utilities.methodslib import (get_shapefile_as_json_pyqgis,
                                 map_porepressure_curve_names, 
                                 reproject_is_needed, 
                                 reproject_layers)

@@ -38,7 +38,7 @@ from .algorithms import (
     BegrensSkadeTunnel
 )
 
-from .utils.gui import GuiUtils
+from .utilities.gui import GuiUtils
 
 
 class GeovitaProcessingPluginProvider(QgsProcessingProvider):
