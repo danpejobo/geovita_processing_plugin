@@ -65,7 +65,9 @@ jobs:
       
       - name: Prepare REMEDY_GIS_RiskTool submodule
         run: |
-          touch ${{ github.workspace }}/$PLUGIN_NAME/REMEDY_GIS_RiskTool/__init__.py
+          docker exec qgis-testing-environment sh -c "touch /tests_directory/$PLUGIN_NAME/REMEDY_GIS_RiskTool/__init__.py"
+          docker exec qgis-testing-environment ls -la /tests_directory/$PLUGIN_NAME/REMEDY_GIS_RiskTool
+
 
       - name: Docker run plugin tests
         run: |
