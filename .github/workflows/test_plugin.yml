@@ -70,7 +70,7 @@ jobs:
       
       - name: Verify Plugin Loading
         run: |
-          docker exec qgis-testing-environment python /tests_directory/$PLUGIN_NAME/verify_plugin_loading.py
+          docker exec qgis-testing-environment python3 /tests_directory/$PLUGIN_NAME/verify_plugin_loading.py
   
 
       - name: Docker run plugin tests
