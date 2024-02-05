@@ -1,8 +1,6 @@
 Status and Limitations
 =====
-- **New algorithms are added to the provider as they are released publically**
-
-- Implemented [REMEDY GIS RiskTool](https://github.com/norwegian-geotechnical-institute/REMEDY_GIS_RiskTool) to run from QGIS processing
+- [REMEDY GIS RiskTool](https://github.com/norwegian-geotechnical-institute/REMEDY_GIS_RiskTool)
   - It is important to read the manual for this project. Especially if you want to perform `vulnerability analysis`. This will require you to edit the polygon layers containing the `building` features (see specifications section below).
   - Supported filetypes: `.shp` `.tif` `.tiff`
     - If you have an "in memory" layer or other fileformats you will need to save it to a `.shp` file. This is a restriction imposed by the underlaying submodule.
