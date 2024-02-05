@@ -1,12 +1,3 @@
-QGIS Plugin
-===========
-
-This provider functions as a QGIS plugin (for QGIS >= 3.28) and is available via the standard QGIS plugins repository, so you can install it directly from within QGIS itself.
-
-The plugin adds a new group to the Processing Toolbox for "Geovita", containing sub-groups with tools and algorithms to perform different tasks.
-
-If you enconter bugs of any sort, PLEASE consider reporting them through [the bugtracker at GitHub](https://github.com/danpejobo/geovita_processing_plugin/issues). Everyone benefits!
-
 Status and Limitations
 =====
 - **New algorithms are added to the provider as they are released publically**
