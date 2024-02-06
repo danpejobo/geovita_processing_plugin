@@ -679,6 +679,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         except Exception as e:
             error_msg = f"Unexpected error: {e}\nTraceback:\n{traceback.format_exc()}"
             QgsMessageLog.logMessage(error_msg, level=Qgis.Critical)
+            feedback.reportError(error_msg)
             return {}
         
 #################### HANDLE THE RESULT ###############################

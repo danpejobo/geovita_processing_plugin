@@ -63,18 +63,18 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
             'POREPRESSURE_ENUM': 1, #index
             'POREPRESSURE_REDUCTION': 50,
             'DRY_CRUST_THICKNESS': 2.0,
-            'DEPTH_GROUNDWATER': 3.5,
+            'DEPTH_GROUNDWATER': 4,
             'SOIL_DENSITY': 18.5,
             'OCR': 1.2,
-            'JANBU_REF_STRESS': 100,
-            'JANBU_CONSTANT': 0.02,
+            'JANBU_REF_STRESS': 50,
+            'JANBU_CONSTANT': 4,
             'JANBU_COMP_MODULUS': 15,
             'CONSOLIDATION_TIME': 10,
             'VULNERABILITY_ANALYSIS': True,
             'FILED_NAME_BUILDING_FOUNDATION': 'Foundation',  # Field name
             'FILED_NAME_BUILDING_STRUCTURE': 'Structure',  # Field name
             'FILED_NAME_BUILDING_STATUS': 'Condition',  # Field name
-            'INTERMEDIATE_LAYERS': False,
+            'INTERMEDIATE_LAYERS': True,
             'OUTPUT_FEATURE_NAME': 'test_output-exca-all'
         }
     
