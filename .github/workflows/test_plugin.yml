@@ -21,7 +21,7 @@ env:
   # plugin name/directory where the code for the plugin is stored
   PLUGIN_NAME: geovita_processing_plugin
   # python notation to test running inside plugin
-  TESTS_RUN_FUNCTION: geovita_processing_plugin.test_suite.test_package
+  TESTS_RUN_FUNCTION: test_suite.test_package
   # Docker settings
   DOCKER_IMAGE: qgis/qgis
 
@@ -57,7 +57,7 @@ jobs:
           docker exec qgis-testing-environment sh -c "qgis_setup.sh $PLUGIN_NAME"
           docker exec qgis-testing-environment sh -c "cat /root/.local/share/QGIS/QGIS3/profiles/default/QGIS/QGIS3.ini"
           docker exec qgis-testing-environment sh -c "rm -f /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
-          docker exec qgis-testing-environment sh -c "ln -s /tests_directory/$PLUGIN_NAME /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins"
+          docker exec qgis-testing-environment sh -c "ln -s /tests_directory/$PLUGIN_NAME /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
           docker exec qgis-testing-environment sh -c "pip3 install -r /tests_directory/REQUIREMENTS_TESTING.txt"
           
           docker exec qgis-testing-environment sh -c "ls -l /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/"
