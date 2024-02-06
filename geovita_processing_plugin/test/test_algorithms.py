@@ -15,12 +15,13 @@ start_app()  # Start a QGIS application instance
 
 class TestBegrensSkadeExcavation(unittest.TestCase):
 
-    # @classmethod
-    # def setUpClass(cls):
-    #     """Initialize processing and load your plugin."""
-    #     cls.qgis_app = QgsApplication([], False)
-    #     cls.qgis_app.initQgis()
-    #     QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
+    @classmethod
+    def setUpClass(cls):
+        """Initialize processing and load your plugin."""
+        cls.qgis_app = QgsApplication([], False)
+        cls.qgis_app.initQgis()
+        QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
+        QgsApplication.processingRegistry().addProvider(GeovitaProcessingPluginProvider())
 
     def setUp(self):   
              
