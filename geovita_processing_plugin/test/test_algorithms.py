@@ -4,7 +4,7 @@ from qgis import processing
 from qgis.testing import unittest, start_app
 from pathlib import Path
 
-from geovita_processing_plugin_provider import GeovitaProcessingPluginProvider
+from geovita_processing_plugin.geovita_processing_plugin_provider import GeovitaProcessingPluginProvider
 
 start_app()  # Start a QGIS application instance
 
