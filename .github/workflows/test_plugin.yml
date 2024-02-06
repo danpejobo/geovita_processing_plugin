@@ -21,7 +21,7 @@ env:
   # plugin name/directory where the code for the plugin is stored
   PLUGIN_NAME: geovita_processing_plugin
   # python notation to test running inside plugin
-  TESTS_RUN_FUNCTION: test_suite.test_package
+  TESTS_RUN_FUNCTION: geovita_processing_plugin.test_suite.test_package
   # Docker settings
   DOCKER_IMAGE: qgis/qgis
 

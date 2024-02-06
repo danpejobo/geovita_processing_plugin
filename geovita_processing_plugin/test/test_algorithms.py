@@ -4,27 +4,31 @@ from qgis.core import (QgsApplication,
                        QgsCoordinateReferenceSystem,
                        QgsRasterLayer,
                        QgsProcessingContext)
-from qgis.analysis import QgsNativeAlgorithms
-from qgis import processing
-from qgis.testing import unittest, start_app
+#from qgis.analysis import QgsNativeAlgorithms
+#from qgis import processing
+import processing
+from qgis.testing import unittest#, start_app
 from pathlib import Path
 
 from geovita_processing_plugin.geovita_processing_plugin_provider import GeovitaProcessingPluginProvider
 
-start_app()  # Start a QGIS application instance
+#start_app()  # Start a QGIS application instance
 
 class TestBegrensSkadeExcavation(unittest.TestCase):
 
     @classmethod
-    def setUpClass(cls):
-        """Initialize processing and load your plugin."""
-        cls.qgis_app = QgsApplication([], False)
-        cls.qgis_app.initQgis()
-        QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
-        QgsApplication.processingRegistry().addProvider(GeovitaProcessingPluginProvider())
+    # def setUpClass(cls):
+    #     """Initialize processing and load your plugin."""
+    #     cls.qgis_app = QgsApplication([], False)
+    #     cls.qgis_app.initQgis()
+    #     QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
+    #     QgsApplication.processingRegistry().addProvider(GeovitaProcessingPluginProvider())
 
     def setUp(self):   
-             
+        if not QgsApplication.processingRegistry().providers():
+            self.provider = GeovitaProcessingPluginProvider()
+            QgsApplication.processingRegistry().addProvider(self.provider)
+            
         # Use pathlib to get the current directory (where this test file resides)
         current_dir = Path(__file__).parent
         # Define the path to the data directory relative to this file
@@ -106,10 +110,10 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
 
         # Further checks can include verifying the contents of the output shapefiles
 
-    @classmethod
-    def tearDownClass(cls):
-        """Clean up after all tests are run."""
-        cls.qgis_app.exitQgis()
+    # @classmethod
+    # def tearDownClass(cls):
+    #     """Clean up after all tests are run."""
+    #     cls.qgis_app.exitQgis()
 
 if __name__ == '__main__':
     unittest.main()
