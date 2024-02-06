@@ -67,6 +67,11 @@ jobs:
         run: |
           docker exec qgis-testing-environment sh -c "touch /tests_directory/$PLUGIN_NAME/REMEDY_GIS_RiskTool/__init__.py"
           docker exec qgis-testing-environment ls -la /tests_directory/$PLUGIN_NAME/REMEDY_GIS_RiskTool  
+      
+      - name: Set PYTHONPATH
+        run: |
+          docker exec qgis-testing-environment sh -c "export PYTHONPATH=/root/.local/share/QGIS/QGIS3/profiles/default/python/plugins:$PYTHONPATH"
+          docker exec qgis-testing-environment sh -c "echo $PYTHONPATH"
 
       - name: Docker run plugin tests
         run: |
