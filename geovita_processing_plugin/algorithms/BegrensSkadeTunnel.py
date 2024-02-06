@@ -67,16 +67,35 @@ from ..utilities.methodslib import (get_shapefile_as_json_pyqgis,
 
 class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
     """
-    This is an example algorithm that takes a vector layer and
-    creates a new identical one.
+    The `BegrensSkadeTunnel` algorithm is part of the GeovitaProcessingPlugin suite, designed to evaluate the impact of tunnel construction on 
+    surface structures and the surrounding terrain. It utilizes advanced geotechnical models to simulate both short-term and long-term settlements 
+    resulting from tunnel excavation activities, providing critical insights for urban planning, infrastructure development, and risk management.
 
-    It is meant to be used as an example of how to create your own
-    algorithms and explain methods and variables used to do it. An
-    algorithm like this will be available in all elements, and there
-    is not need for additional work.
+    Key Features:
+    - Analysis of short-term settlements due to tunnel construction, incorporating parameters such as tunnel depth, diameter, and volume loss.
+    - Long-term settlement analysis considering factors like pore pressure reduction, soil saturation density, and over-consolidation ratios.
+    - Vulnerability assessment for buildings near the tunnel path, evaluating the risk of damage due to settlements.
+    - Customizable outputs, allowing for analysis under various geotechnical conditions and construction scenarios.
 
-    All Processing algorithms should extend the QgsProcessingAlgorithm
-    class.
+    Parameters:
+    - INPUT_BUILDING_POLY: Polygon layer representing buildings or structures of interest.
+    - INPUT_TUNNEL_POLY: Polygon layer depicting the planned tunnel path.
+    - RASTER_ROCK_SURFACE: Raster layer indicating depth to bedrock for detailed geological analysis.
+    - Various geotechnical parameters to tailor the analysis to specific conditions and construction plans.
+
+    Outputs:
+    - OUTPUT_BUILDING: Shapefile indicating potential settlements and risks for buildings.
+    - OUTPUT_WALL: Shapefile detailing wall inclinations and potential structural impacts.
+    - OUTPUT_CORNER: Shapefile showing corner point settlements for detailed vulnerability assessment.
+
+    Usage:
+    The algorithm is integrated within the QGIS Processing Toolbox, enabling users to easily apply it to their geospatial projects. 
+    By inputting the required layers and specifying geotechnical parameters, users can generate detailed analyses of tunneling impacts, 
+    assisting in the decision-making process for tunnel construction projects.
+
+    The algorithm leverages the mainBegrensSkade_Tunnel function from the REMEDY_GIS_RiskTool for spatial analysis,
+    aiding in the assessment of construction impacts on the urban and natural environment.
+
     """
     def __init__(self):
         super().__init__()
