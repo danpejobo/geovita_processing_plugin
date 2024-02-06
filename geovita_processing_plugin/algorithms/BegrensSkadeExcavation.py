@@ -62,16 +62,35 @@ from ..REMEDY_GIS_RiskTool.BegrensSkade import mainBegrensSkade_Excavation
 
 class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
     """
-    This is an example algorithm that takes a vector layer and
-    creates a new identical one.
+    The BegrensSkadeExcavation algorithm performs a detailed analysis of building settlements
+    and risks associated with subsidence and inclination due to excavation activities. It is 
+    designed to process vector layers representing buildings and excavation areas, optionally 
+    incorporating raster data for depth to bedrock analysis.
 
-    It is meant to be used as an example of how to create your own
-    algorithms and explain methods and variables used to do it. An
-    algorithm like this will be available in all elements, and there
-    is not need for additional work.
+    This algorithm is capable of computing both short-term and long-term settlements at various 
+    points of a building, such as corners or breakpoints, and classifying the risk of settlement 
+    damage. It supports vulnerability analysis based on the building's foundation, structure, 
+    and condition, offering a comprehensive risk assessment tool for geotechnical engineers and 
+    urban planners.
 
-    All Processing algorithms should extend the QgsProcessingAlgorithm
-    class.
+    Parameters:
+    - INPUT_BUILDING_POLY: Vector layer of building polygons.
+    - INPUT_EXCAVATION_POLY: Vector layer of excavation polygons.
+    - RASTER_ROCK_SURFACE: Raster layer representing depth to bedrock (optional).
+    - OUTPUT_FOLDER: Destination folder for output files.
+    - Various parameters to configure the analysis, including excavation depth, settlement 
+      curves, pore pressure reduction, soil density, and more.
+
+    Outputs:
+    - OUTPUT_BUILDING, OUTPUT_WALL, OUTPUT_CORNER: Shapefiles representing the analysis results,
+      including total settlements, wall inclinations, and classified risk levels.
+
+    The algorithm leverages the mainBegrensSkade_Excavation function from the REMEDY_GIS_RiskTool 
+    module and includes advanced options for intermediate layer management and output customization.
+
+    Usage:
+    This algorithm can be executed within QGIS's Processing Toolbox. Ensure all necessary input 
+    layers are prepared and parameters are set according to the specific analysis requirements.
     """
     def __init__(self):
         super().__init__()
