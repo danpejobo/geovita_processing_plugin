@@ -74,7 +74,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
             'FILED_NAME_BUILDING_FOUNDATION': 'Foundation',  # Field name
             'FILED_NAME_BUILDING_STRUCTURE': 'Structure',  # Field name
             'FILED_NAME_BUILDING_STATUS': 'Condition',  # Field name
-            'INTERMEDIATE_LAYERS': True,
+            'INTERMEDIATE_LAYERS': False,
             'OUTPUT_FEATURE_NAME': 'test_output-exca-all'
         }
     
