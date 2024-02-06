@@ -58,7 +58,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
             'SHORT_TERM_SETTLEMENT': True,
             'EXCAVATION_DEPTH': 10.0,
             'SETTLEMENT_ENUM': 1, #index
-            'LONG_TERM_SETTLEMENT': False,
+            'LONG_TERM_SETTLEMENT': True,
             'RASTER_ROCK_SURFACE': self.raster_rock_surface_layer,
             'POREPRESSURE_ENUM': 1, #index
             'POREPRESSURE_REDUCTION': 50,
@@ -70,11 +70,11 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
             'JANBU_CONSTANT': 0.02,
             'JANBU_COMP_MODULUS': 15,
             'CONSOLIDATION_TIME': 10,
-            'VULNERABILITY_ANALYSIS': False,
+            'VULNERABILITY_ANALYSIS': True,
             'FILED_NAME_BUILDING_FOUNDATION': 'Foundation',  # Field name
             'FILED_NAME_BUILDING_STRUCTURE': 'Structure',  # Field name
             'FILED_NAME_BUILDING_STATUS': 'Condition',  # Field name
-            'INTERMEDIATE_LAYERS': False,
+            'INTERMEDIATE_LAYERS': True,
             'OUTPUT_FEATURE_NAME': 'test_output-exca-all'
         }
     
@@ -85,7 +85,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         for alg in QgsApplication.processingRegistry().algorithms():
             # Check if the algorithm ID starts with "geovita"
             if alg.id().startswith("geovita"):
-                logger.info(f"\n{alg.id()} - {alg.displayName()}")
+                logger.info(f"{alg.id()} - {alg.displayName()}")
                 found_relevant_algorithms = True
 
         # Assert that at least one relevant algorithm was found
