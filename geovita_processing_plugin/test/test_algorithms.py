@@ -1,28 +1,24 @@
+from qgis import processing
+#import processing
+from qgis.testing import unittest
 from qgis.core import (QgsApplication,
                        QgsProcessingFeedback,
                        QgsVectorLayer,
                        QgsCoordinateReferenceSystem,
                        QgsRasterLayer,
                        QgsProcessingContext)
-#from qgis.analysis import QgsNativeAlgorithms
-#from qgis import processing
-import processing
-from qgis.testing import unittest#, start_app
+
+import logging
 from pathlib import Path
 
 from geovita_processing_plugin.geovita_processing_plugin_provider import GeovitaProcessingPluginProvider
 
-#start_app()  # Start a QGIS application instance
+# Set up logging at the beginning of your test file
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 
 class TestBegrensSkadeExcavation(unittest.TestCase):
-
-    @classmethod
-    # def setUpClass(cls):
-    #     """Initialize processing and load your plugin."""
-    #     cls.qgis_app = QgsApplication([], False)
-    #     cls.qgis_app.initQgis()
-    #     QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
-    #     QgsApplication.processingRegistry().addProvider(GeovitaProcessingPluginProvider())
 
     def setUp(self):   
         if not QgsApplication.processingRegistry().providers():
@@ -89,7 +85,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         for alg in QgsApplication.processingRegistry().algorithms():
             # Check if the algorithm ID starts with "geovita"
             if alg.id().startswith("geovita"):
-                print(alg.id(), alg.displayName())
+                logger.info(f"\n{alg.id()} - {alg.displayName()}")
                 found_relevant_algorithms = True
 
         # Assert that at least one relevant algorithm was found
@@ -110,10 +106,6 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
 
         # Further checks can include verifying the contents of the output shapefiles
 
-    # @classmethod
-    # def tearDownClass(cls):
-    #     """Clean up after all tests are run."""
-    #     cls.qgis_app.exitQgis()
 
 if __name__ == '__main__':
     unittest.main()
