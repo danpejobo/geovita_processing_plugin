@@ -2,6 +2,8 @@
 
 Geovita Processing Provider
 ===========================
+[![Static Badge](https://img.shields.io/badge/plugins.QGIS.org-published-green)](https://plugins.qgis.org/plugins/geovita_processing_plugin/)
+[![GitHub Release](https://img.shields.io/github/v/release/danpejobo/geovita_processing_plugin)](https://github.com/danpejobo/geovita_processing_plugin/releases)
 
 The Geovita processing provider for QGIS!
 

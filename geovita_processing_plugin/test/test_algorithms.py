@@ -4,6 +4,8 @@ from qgis import processing
 from qgis.testing import unittest, start_app
 from pathlib import Path
 
+from geovita_processing_plugin_provider import GeovitaProcessingPluginProvider
+
 start_app()  # Start a QGIS application instance
 
 class TestBegrensSkadeExcavation(unittest.TestCase):
@@ -15,6 +17,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         cls.qgis_app.initQgis()
         QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
         # Optionally, load your plugin here if it's not automatically detected
+        QgsApplication.processingRegistry().addProvider(GeovitaProcessingPluginProvider())
 
     def setUp(self):        
         # Use pathlib to get the current directory (where this test file resides)
