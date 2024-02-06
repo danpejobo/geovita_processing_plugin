@@ -1,4 +1,9 @@
-from qgis.core import (QgsApplication, QgsProcessingFeedback, QgsVectorLayer, QgsCoordinateReferenceSystem, QgsRasterLayer, QgsProcessingContext)
+from qgis.core import (QgsApplication,
+                       QgsProcessingFeedback,
+                       QgsVectorLayer,
+                       QgsCoordinateReferenceSystem,
+                       QgsRasterLayer,
+                       QgsProcessingContext)
 from qgis.analysis import QgsNativeAlgorithms
 from qgis import processing
 from qgis.testing import unittest, start_app
@@ -16,10 +21,12 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         cls.qgis_app = QgsApplication([], False)
         cls.qgis_app.initQgis()
         QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
-        # Optionally, load your plugin here if it's not automatically detected
-        QgsApplication.processingRegistry().addProvider(GeovitaProcessingPluginProvider())
 
-    def setUp(self):        
+    def setUp(self):   
+        # Optionally, load your plugin here if it's not automatically detected
+        self.provider = GeovitaProcessingPluginProvider()
+        QgsApplication.processingRegistry().addProvider(self.provider)
+             
         # Use pathlib to get the current directory (where this test file resides)
         current_dir = Path(__file__).parent
         # Define the path to the data directory relative to this file
