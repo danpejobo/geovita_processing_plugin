@@ -15,17 +15,14 @@ start_app()  # Start a QGIS application instance
 
 class TestBegrensSkadeExcavation(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        """Initialize processing and load your plugin."""
-        cls.qgis_app = QgsApplication([], False)
-        cls.qgis_app.initQgis()
-        QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
+    # @classmethod
+    # def setUpClass(cls):
+    #     """Initialize processing and load your plugin."""
+    #     cls.qgis_app = QgsApplication([], False)
+    #     cls.qgis_app.initQgis()
+    #     QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
 
     def setUp(self):   
-        # Optionally, load your plugin here if it's not automatically detected
-        self.provider = GeovitaProcessingPluginProvider()
-        QgsApplication.processingRegistry().addProvider(self.provider)
              
         # Use pathlib to get the current directory (where this test file resides)
         current_dir = Path(__file__).parent
