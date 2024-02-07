@@ -390,7 +390,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         self.addParameter(
             QgsProcessingParameterString(
                 self.OUTPUT_FEATURE_NAME,
-                self.tr('Naming Conventions for Analysis and Features (appended to file-names)'),
+                self.tr('Naming Conventions for Analysis and Features (Output feature name appended to file-names)'),
             )
         )
         self.addParameter(
