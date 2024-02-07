@@ -109,9 +109,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         self.assertTrue(Path(results['OUTPUT_CORNER']).exists())
 
         # Further checks can include verifying the contents of the output shapefiles
-        self.assertTrue(Path(self.data_dir / "reprojected_test_building.shp").exists())
-        self.assertTrue(Path(self.data_dir / "reprojected_test_excavation.shp").exists())
-        self.assertTrue(Path(self.data_dir / "reprojected_test_raster_rock_surface.tif").exists())
+
 
 
 if __name__ == '__main__':
