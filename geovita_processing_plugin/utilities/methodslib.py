@@ -365,7 +365,7 @@ def create_temp_folder_for_version(qgis_version_int : int, context: QgsProcessin
         temp_folder.mkdir(parents=True, exist_ok=True)
     else:
         # For older versions, or if no context is provided, use the global Processing temporary folder
-        temp_folder = Path(QgsProcessingUtils.tempFolder())
+        temp_folder = Path(QgsProcessingUtils.tempFolder(context))
         temp_folder.mkdir(parents=True, exist_ok=True)
         
     return temp_folder
