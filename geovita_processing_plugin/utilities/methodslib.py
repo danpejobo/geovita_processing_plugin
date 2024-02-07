@@ -302,7 +302,7 @@ def reproject_layers(keep_interm_layer: bool,
         processing.run("gdal:warpreproject", {
             'INPUT': raster_layer.source(),
             'SOURCE_CRS': raster_layer.crs().authid(),
-            'TARGET_CRS': output_crs,
+            'TARGET_CRS': output_crs.authid(),
             'OUTPUT': str(reprojected_raster_path)
         }, context=context, feedback=feedback)
         
