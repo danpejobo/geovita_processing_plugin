@@ -1,5 +1,5 @@
-from qgis import processing
-#import processing
+#from qgis import processing
+import processing
 from qgis.testing import unittest
 from qgis.core import (QgsApplication,
                        QgsProcessingFeedback,
