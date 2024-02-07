@@ -46,7 +46,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         self.assertTrue(self.raster_rock_surface_layer.isValid(), "Raster rock surface layer failed to load.")
         
         #Output CRS
-        self.out_crs = QgsCoordinateReferenceSystem('EPSG:25832')
+        self.out_crs = QgsCoordinateReferenceSystem('EPSG:5110')
         self.assertTrue(self.out_crs.isValid(), "OUTPUT CRS is invalid!")
         
         # # Set parameters
@@ -62,8 +62,8 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
             'RASTER_ROCK_SURFACE': self.raster_rock_surface_layer,
             'POREPRESSURE_ENUM': 1, #index
             'POREPRESSURE_REDUCTION': 50,
-            'DRY_CRUST_THICKNESS': 2.0,
-            'DEPTH_GROUNDWATER': 4,
+            'DRY_CRUST_THICKNESS': 5.0,
+            'DEPTH_GROUNDWATER': 3,
             'SOIL_DENSITY': 18.5,
             'OCR': 1.2,
             'JANBU_REF_STRESS': 50,
