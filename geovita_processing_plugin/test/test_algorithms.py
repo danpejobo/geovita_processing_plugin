@@ -1,5 +1,5 @@
-#from qgis import processing
-import processing
+from qgis import processing
+#import processing
 from qgis.testing import unittest
 from qgis.core import (QgsApplication,
                        QgsProcessingFeedback,
@@ -28,12 +28,12 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         # Use pathlib to get the current directory (where this test file resides)
         current_dir = Path(__file__).parent
         # Define the path to the data directory relative to this file
-        data_dir = current_dir / 'data'
+        self.data_dir = current_dir / 'data'
         
         # Construct paths to your test datasets within the data directory
-        self.building_layer_path = data_dir / 'bygninger.shp'
-        self.excavation_layer_path = data_dir / 'byggegrop.shp'
-        self.raster_rock_surface_path = data_dir / 'DTB-dummy-25833-clip.tif'
+        self.building_layer_path = self.data_dir / 'bygninger.shp'
+        self.excavation_layer_path = self.data_dir / 'byggegrop.shp'
+        self.raster_rock_surface_path = self.data_dir / 'DTB-dummy-25833-clip.tif'
 
         # Assuming these layers exist for testing purposes
         self.building_layer = QgsVectorLayer(str(self.building_layer_path), 'test_building', 'ogr')
@@ -53,7 +53,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         self.params = {
             'INPUT_BUILDING_POLY': self.building_layer,
             'INPUT_EXCAVATION_POLY': self.excavation_layer,
-            'OUTPUT_FOLDER': str(data_dir),
+            'OUTPUT_FOLDER': str(self.data_dir),
             'OUTPUT_CRS': self.out_crs,
             'SHORT_TERM_SETTLEMENT': True,
             'EXCAVATION_DEPTH': 10.0,
@@ -74,7 +74,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
             'FILED_NAME_BUILDING_FOUNDATION': 'Foundation',  # Field name
             'FILED_NAME_BUILDING_STRUCTURE': 'Structure',  # Field name
             'FILED_NAME_BUILDING_STATUS': 'Condition',  # Field name
-            'INTERMEDIATE_LAYERS': False,
+            'INTERMEDIATE_LAYERS': True,
             'OUTPUT_FEATURE_NAME': 'test_output-exca-all'
         }
     
@@ -105,6 +105,9 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         self.assertTrue(Path(results['OUTPUT_CORNER']).exists())
 
         # Further checks can include verifying the contents of the output shapefiles
+        self.assertTrue(Path(self.data_dir / "reprojected_test_building.shp").exists())
+        self.assertTrue(Path(self.data_dir / "reprojected_test_excavation.shp").exists())
+        self.assertTrue(Path(self.data_dir / "reprojected_test_raster_rock_surface.tif").exists())
 
 
 if __name__ == '__main__':
