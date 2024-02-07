@@ -538,8 +538,6 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         self.logger.info(f"PROCESS - Rock raster DTM: {source_raster_rock_surface}")
         if bLongterm:
             self.logger.info(f"PROCESS - ######## LONGTERM ########")
-            self.logger.info(f"PROCESS - Defining long term input")
-
         ############### HANDELING OF INPUT RASTER ################
             if source_raster_rock_surface is not None:
             ############### RASTER REPROJECT ################
@@ -556,7 +554,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
                 self.logger.info(f"PROCESS - Rock raster DTM File path: {path_source_raster_rock_surface}")
                 feedback.pushInfo(f"PROCESS - Rock raster DTM File path: {path_source_raster_rock_surface}")
                 # Check if the file extension is .tif
-                if path_source_raster_rock_surface.endswith('.tif') or path_source_raster_rock_surface.endswith('.tiff'):
+                if path_source_raster_rock_surface.endswith(('.tif', '.tiff')):
                     feedback.pushInfo("PROCESS - The raster layer is a TIFF file.")
                     # Continue processing...
                 else:
