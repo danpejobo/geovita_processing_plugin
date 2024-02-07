@@ -25,10 +25,14 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
             self.provider = GeovitaProcessingPluginProvider()
             QgsApplication.processingRegistry().addProvider(self.provider)
             
-        # Use pathlib to get the current directory (where this test file resides)
-        current_dir = Path(__file__).parent
+        # Use pathlib to get the base directory (where this test file resides)
+        base_dir = Path(__file__).parent
         # Define the path to the data directory relative to this file
-        self.data_dir = current_dir / 'data'
+        self.data_dir = base_dir / 'data'
+        
+        self.output_data_dir = self.data_dir / 'output'
+        # Make sure the output directory exists
+        self.output_data_dir.mkdir(parents=True, exist_ok=True)
         
         # Construct paths to your test datasets within the data directory
         self.building_layer_path = self.data_dir / 'bygninger.shp'
@@ -53,12 +57,12 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         self.params = {
             'INPUT_BUILDING_POLY': self.building_layer,
             'INPUT_EXCAVATION_POLY': self.excavation_layer,
-            'OUTPUT_FOLDER': str(self.data_dir),
+            'OUTPUT_FOLDER': str(self.output_data_dir),
             'OUTPUT_CRS': self.out_crs,
             'SHORT_TERM_SETTLEMENT': True,
             'EXCAVATION_DEPTH': 10.0,
             'SETTLEMENT_ENUM': 1, #index
-            'LONG_TERM_SETTLEMENT': False,
+            'LONG_TERM_SETTLEMENT': True,
             'RASTER_ROCK_SURFACE': self.raster_rock_surface_layer,
             'POREPRESSURE_ENUM': 1, #index
             'POREPRESSURE_REDUCTION': 50,
