@@ -45,10 +45,11 @@ jobs:
       - name: Docker pull and create qgis-testing-environment
         run: |
           docker pull "$DOCKER_IMAGE":${{ matrix.docker_tags }}
-          docker run -d -e XDG_RUNTIME_DIR=/tmp/runtime-root --name qgis-testing-environment -v ${{ github.workspace }}:/tests_directory/$PLUGIN_NAME -e DISPLAY=:99 "$DOCKER_IMAGE":${{ matrix.docker_tags }}
+          docker run -d -e XDG_RUNTIME_DIR=/tmp/runtime-root --name qgis-testing-environment -v ${{ github.workspace }}:/tests_directory -e DISPLAY=:99 "$DOCKER_IMAGE":${{ matrix.docker_tags }}
       
       - name: List mounted directory contents
         run: |
+          docker exec qgis-testing-environment ls -la /tests_directory
           docker exec qgis-testing-environment ls -la /tests_directory/$PLUGIN_NAME
 
       - name: Docker set up QGIS
@@ -57,18 +58,19 @@ jobs:
           docker exec qgis-testing-environment sh -c "cat /root/.local/share/QGIS/QGIS3/profiles/default/QGIS/QGIS3.ini"
           docker exec qgis-testing-environment sh -c "rm -f /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
           docker exec qgis-testing-environment sh -c "ln -s /tests_directory/$PLUGIN_NAME /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
-          docker exec qgis-testing-environment sh -c "pip3 install -r /tests_directory/$PLUGIN_NAME/REQUIREMENTS_TESTING.txt"
+          docker exec qgis-testing-environment sh -c "pip3 install -r /tests_directory/REQUIREMENTS_TESTING.txt"
           
-          docker exec qgis-testing-environment sh -c "ls -la /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/"
-          docker exec qgis-testing-environment sh -c "ls -la /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
+          docker exec qgis-testing-environment sh -c "ls -l /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/"
+          docker exec qgis-testing-environment sh -c "ls -l /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
       
       - name: Prepare REMEDY_GIS_RiskTool submodule
         run: |
-          touch ${{ github.workspace }}/REMEDY_GIS_RiskTool/__init__.py
+          docker exec qgis-testing-environment sh -c "touch /tests_directory/$PLUGIN_NAME/REMEDY_GIS_RiskTool/__init__.py"
+          docker exec qgis-testing-environment ls -la /tests_directory/$PLUGIN_NAME/REMEDY_GIS_RiskTool  
 
       - name: Docker run plugin tests
         run: |
-          docker exec qgis-testing-environment sh -c "export PYTHONPATH=/tests_directory/$PLUGIN_NAME:\$PYTHONPATH && echo \$PYTHONPATH && qgis_testrunner.sh $TESTS_RUN_FUNCTION"
+          docker exec qgis-testing-environment sh -c "export PYTHONPATH=/root/.local/share/QGIS/QGIS3/profiles/default/python/plugins:$PYTHONPATH && qgis_testrunner.sh $TESTS_RUN_FUNCTION"
 
   Check-code-quality:
     runs-on: ubuntu-latest

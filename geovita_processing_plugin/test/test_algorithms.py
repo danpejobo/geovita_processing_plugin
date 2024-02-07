@@ -1,25 +1,30 @@
-from qgis.core import (QgsApplication, QgsProcessingFeedback, QgsVectorLayer, QgsCoordinateReferenceSystem, QgsRasterLayer, QgsProcessingContext)
-from qgis.analysis import QgsNativeAlgorithms
-from qgis import processing
-from qgis.testing import unittest, start_app
+#from qgis import processing
+import processing
+from qgis.testing import unittest
+from qgis.core import (QgsApplication,
+                       QgsProcessingFeedback,
+                       QgsVectorLayer,
+                       QgsCoordinateReferenceSystem,
+                       QgsRasterLayer,
+                       QgsProcessingContext)
+
+import logging
 from pathlib import Path
 
-import geovita_processing_plugin
+from geovita_processing_plugin.geovita_processing_plugin_provider import GeovitaProcessingPluginProvider
 
-start_app()  # Start a QGIS application instance
+# Set up logging at the beginning of your test file
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 
 class TestBegrensSkadeExcavation(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        """Initialize processing and load your plugin."""
-        cls.qgis_app = QgsApplication([], False)
-        cls.qgis_app.initQgis()
-        QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
-        # Optionally, load your plugin here if it's not automatically detected
-        geovita_processing_plugin.GeovitaProcessingPluginPlugin.initGui()
-
-    def setUp(self):        
+    def setUp(self):   
+        if not QgsApplication.processingRegistry().providers():
+            self.provider = GeovitaProcessingPluginProvider()
+            QgsApplication.processingRegistry().addProvider(self.provider)
+            
         # Use pathlib to get the current directory (where this test file resides)
         current_dir = Path(__file__).parent
         # Define the path to the data directory relative to this file
@@ -53,19 +58,19 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
             'SHORT_TERM_SETTLEMENT': True,
             'EXCAVATION_DEPTH': 10.0,
             'SETTLEMENT_ENUM': 1, #index
-            'LONG_TERM_SETTLEMENT': False,
+            'LONG_TERM_SETTLEMENT': True,
             'RASTER_ROCK_SURFACE': self.raster_rock_surface_layer,
             'POREPRESSURE_ENUM': 1, #index
             'POREPRESSURE_REDUCTION': 50,
             'DRY_CRUST_THICKNESS': 2.0,
-            'DEPTH_GROUNDWATER': 3.5,
+            'DEPTH_GROUNDWATER': 4,
             'SOIL_DENSITY': 18.5,
             'OCR': 1.2,
-            'JANBU_REF_STRESS': 100,
-            'JANBU_CONSTANT': 0.02,
+            'JANBU_REF_STRESS': 50,
+            'JANBU_CONSTANT': 4,
             'JANBU_COMP_MODULUS': 15,
             'CONSOLIDATION_TIME': 10,
-            'VULNERABILITY_ANALYSIS': False,
+            'VULNERABILITY_ANALYSIS': True,
             'FILED_NAME_BUILDING_FOUNDATION': 'Foundation',  # Field name
             'FILED_NAME_BUILDING_STRUCTURE': 'Structure',  # Field name
             'FILED_NAME_BUILDING_STATUS': 'Condition',  # Field name
@@ -80,7 +85,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         for alg in QgsApplication.processingRegistry().algorithms():
             # Check if the algorithm ID starts with "geovita"
             if alg.id().startswith("geovita"):
-                print(alg.id(), alg.displayName())
+                logger.info(f"{alg.id()} - {alg.displayName()}")
                 found_relevant_algorithms = True
 
         # Assert that at least one relevant algorithm was found
@@ -101,10 +106,6 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
 
         # Further checks can include verifying the contents of the output shapefiles
 
-    @classmethod
-    def tearDownClass(cls):
-        """Clean up after all tests are run."""
-        cls.qgis_app.exitQgis()
 
 if __name__ == '__main__':
     unittest.main()

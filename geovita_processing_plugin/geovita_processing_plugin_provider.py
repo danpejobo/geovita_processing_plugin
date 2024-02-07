@@ -32,13 +32,13 @@ __revision__ = '$Format:%H$'
 
 from qgis.core import QgsProcessingProvider
 
-from .algorithms import (
+from geovita_processing_plugin.algorithms import (
     BegrensSkadeExcavation,
     BegrensSkadeImpactMap,
     BegrensSkadeTunnel
 )
 
-from .utils.gui import GuiUtils
+from geovita_processing_plugin.utilities.gui import GuiUtils
 
 
 class GeovitaProcessingPluginProvider(QgsProcessingProvider):

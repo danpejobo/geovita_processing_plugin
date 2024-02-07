@@ -1,3 +1,6 @@
 [submodule "REMEDY_GIS_RiskTool"]
 	path = REMEDY_GIS_RiskTool
 	url = https://github.com/norwegian-geotechnical-institute/REMEDY_GIS_RiskTool.git
+[submodule "geovita_processing_plugin/REMEDY_GIS_RiskTool"]
+	path = geovita_processing_plugin/REMEDY_GIS_RiskTool
+	url = https://github.com/norwegian-geotechnical-institute/REMEDY_GIS_RiskTool.git

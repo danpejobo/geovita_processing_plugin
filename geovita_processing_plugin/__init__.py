@@ -31,6 +31,7 @@ __version__ = "2.0.2"
 import sys
 from pathlib import Path
 
+
 # noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name
     """Load GeovitaProcessingPlugin class from file GeovitaProcessingPlugin.
@@ -40,7 +41,7 @@ def classFactory(iface):  # pylint: disable=invalid-name
     """
     # Directory of the current file (__init__.py)
     plugin_dir = Path(__file__).parent
-    
+
     # Add the plugin directory to sys.path if not already there
     if str(plugin_dir) not in sys.path:
         sys.path.append(str(plugin_dir))
@@ -49,8 +50,9 @@ def classFactory(iface):  # pylint: disable=invalid-name
     submodule_dir = plugin_dir / "REMEDY_GIS_RiskTool"
     if str(submodule_dir) not in sys.path:
         sys.path.append(str(submodule_dir))
-        
-    # The styles are provided in a styles.zip archive. As such it is neccessary to extract them the first time the plugin is loaded
+
+    # The styles are provided in a styles.zip archive. 
+    # It is neccessary to extract them the first time the plugin is loaded
     styles_dir = plugin_dir / "styles"
     if not styles_dir.is_dir():
         import zipfile

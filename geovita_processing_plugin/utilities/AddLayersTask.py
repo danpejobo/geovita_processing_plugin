@@ -9,7 +9,7 @@ from qgis.core import (QgsTask,
 from pathlib import Path
 from datetime import datetime
 
-from . import logger
+from geovita_processing_plugin.utilities import logger
 
 class AddLayersTask(QgsTask):
     """
@@ -158,62 +158,4 @@ class AddLayersTask(QgsTask):
         # Log layer addition
         if logger:
             logger.debug(f"@_add_layer_to_group@ - Added layer '{layer.name()}' to group '{group_name}'.")
-        
 
-    # The Original code that worked below
-    
-    # def add_layer_to_qgis(self, layer_path: str, layer_name: str, style_path: str, group_name: str = None, logger: logger.CustomLogger = None) -> bool:
-    #     """
-    #     Adds a layer (vector or raster) to QGIS with a specified style, and optionally adds it to a specified group.
-
-    #     Parameters:
-    #     layer_path (str): Path to the layer file.
-    #     layer_name (str): Name for the layer in QGIS.
-    #     style_path (str): Path to the QML style file.
-    #     group_name (str, optional): Name of the group to add the layer to. If None, the layer is added without a group.
-    #     logger (logging.Logger, optional): Logger for logging messages.
-
-    #     Returns:
-    #     bool: True if the layer is added successfully, False otherwise.
-    #     """
-
-    #     # Determine layer type (raster or vector) based on file extension
-    #     if layer_path.endswith('.tif') or layer_path.endswith('.tiff'):
-    #         layer = QgsRasterLayer(layer_path, f'{layer_name}')
-    #         logger.info(f"Loaded RASTER layer to style it: {layer.name()}")
-    #     else:
-    #         layer = QgsVectorLayer(layer_path, f'{layer_name}', 'ogr')
-    #         logger.info(f"Loaded VECTOR layer to style it: {layer.name()}")
-
-    #     if not layer.isValid():
-    #         if logger:
-    #             logger.debug(f"Failed to load layer: {layer_path}")
-    #         return False
-
-    #     # Apply the style
-    #     layer.loadNamedStyle(style_path)
-    #     logger.info(f"Loaded style on this path: {style_path}")
-    #     layer.triggerRepaint()
-
-    #     # Get the root of the layer tree
-    #     root = QgsProject.instance().layerTreeRoot()
-
-    #     # Add layer to group if group_name is specified
-    #     if group_name:
-    #         group = root.findGroup(group_name)
-    #         if not group:
-    #             #group = root.insertGroup(0, group_name)
-    #             group = QgsLayerTreeGroup(group_name)
-    #             root.insertChildNode(0, group)
-    #             logger.info(f"Created group node with name: {group.name()}")
-
-    #         QgsProject.instance().addMapLayer(layer, False)  # False means do not add to the layer tree root
-    #         node_layer = QgsLayerTreeLayer(layer)
-    #         group.insertChildNode(1, node_layer)
-    #         #group.addLayer(layer)
-    #         logger.info(f"Added {layer} to group: {group.name()}")
-    #     else:
-    #         QgsProject.instance().addMapLayer(layer, True)  # Add layer directly to the layer tree
-    #         logger.info(f"No group prensen. Directly add layer: {layer}")
-
-    #     return True

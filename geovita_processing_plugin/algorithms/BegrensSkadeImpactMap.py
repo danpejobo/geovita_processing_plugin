@@ -52,26 +52,46 @@ import traceback
 from pathlib import Path
 
 from .base_algorithm import GvBaseProcessingAlgorithms
-from ..utils.AddLayersTask import AddLayersTask
-from ..utils.gui import GuiUtils
-from ..utils.logger import CustomLogger
-from ..utils.methodslib import get_shapefile_as_json_pyqgis, process_raster_for_impactmap, reproject_is_needed, reproject_layers
+from ..utilities.AddLayersTask import AddLayersTask
+from ..utilities.gui import GuiUtils
+from ..utilities.logger import CustomLogger
+from ..utilities.methodslib import get_shapefile_as_json_pyqgis, process_raster_for_impactmap, reproject_is_needed, reproject_layers
 
 from ..REMEDY_GIS_RiskTool.BegrensSkade import mainBegrensSkade_ImpactMap
 
 
 class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
     """
-    This is an example algorithm that takes a vector layer and
-    creates a new identical one.
+    The `BegrensSkadeImpactMap` algorithm performs geospatial analysis to simulate the impact of excavation activities on the surrounding terrain. 
+    It utilizes excavation polygons to calculate settlements across a grid, offering a detailed view of potential terrain deformation. 
+    The algorithm is part of the GeovitaProcessingPlugin suite, designed to support urban planning and geotechnical engineering by 
+    providing insights into the subsurface impact of construction activities.
 
-    It is meant to be used as an example of how to create your own
-    algorithms and explain methods and variables used to do it. An
-    algorithm like this will be available in all elements, and there
-    is not need for additional work.
+    Key Features:
+    - Calculation of terrain settlements based on excavation depth and geotechnical parameters.
+    - Support for both short-term and long-term settlement analysis.
+    - Uses depth to bedrock raster data for settlements calculations.
+    - Advanced options for output customization, including grid size and clipping range.
+    - Generation of a detailed impact map as a raster layer, visualizing the potential settlement across the terrain.
 
-    All Processing algorithms should extend the QgsProcessingAlgorithm
-    class.
+    Parameters:
+    - INPUT_EXCAVATION_POLY: Polygon layer representing excavation areas.
+    - RASTER_ROCK_SURFACE: Raster layer indicating depth to bedrock.
+    - OUTPUT_FOLDER: Directory for storing the output raster.
+    - OUTPUT_FEATURE_NAME: Naming convention for analysis and output features.
+    - OUTPUT_CRS: Coordinate reference system for the output data.
+    - Various parameters for geotechnical analysis, such as excavation depth, soil density, and consolidation time.
+
+    Outputs:
+    - OUTPUT_RASTER: A raster layer visualizing the calculated terrain settlements.
+
+    Usage:
+    This algorithm is accessible through the QGIS Processing Toolbox under the GeovitaProcessingPlugin suite. 
+    Ensure all required input layers are prepared and parameters are appropriately set to conduct the impact analysis. 
+    The output raster can be used for further analysis or visualized in QGIS for planning and decision-making purposes.
+
+    The algorithm leverages the mainBegrensSkade_ImpactMap function from the REMEDY_GIS_RiskTool for spatial analysis,
+    aiding in the assessment of construction impacts on the urban and natural environment.
     """
     
     def __init__(self):
