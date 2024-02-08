@@ -100,6 +100,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         log_dir_path = home_dir / "Downloads" / "REMEDY" / "log"
         self.logger = CustomLogger(log_dir_path, "BegrensSkadeII_QGIS_EXCAVATION.log", "EXCAVATION_LOGGER").get_logger()
         self.logger.info(f"__INIT__ - Finished initialize BegrensSkadeExcavation ")
+        self.add_layers_task = AddLayersTask()
         
     # Constants used to refer to parameters and outputs. They will be
     # used when calling the algorithm from another algorithm, or when
@@ -706,7 +707,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
             
 ######### EXPERIMENTAL ADD LAYERS TO GUI #########
         # Create the task
-        add_layers_task = AddLayersTask("Add Layers", layers_info, feature_name, styles_dir_path, self.logger)
+        self.add_layers_task.setParameters(layers_info, feature_name, styles_dir_path, self.logger)
         # Local event loop
         loop = QEventLoop()
         # Define a slot to handle the task completion
@@ -718,15 +719,15 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
             loop.quit()  # Quit the event loop
             
         # Connect the task's completed signal to the slot
-        add_layers_task.taskCompleted.connect(onTaskCompleted)
+        self.add_layers_task.taskCompleted.connect(onTaskCompleted)
 
         # Start the task
-        QgsApplication.taskManager().addTask(add_layers_task)
+        QgsApplication.taskManager().addTask(self.add_layers_task)
         # Start the event loop
         loop.exec_()
 
         # Check if the task was successful
-        if not add_layers_task.completed:
+        if not self.add_layers_task.completed:
             raise QgsProcessingException("Error occurred while adding layers.")
         
         feedback.setProgress(100)

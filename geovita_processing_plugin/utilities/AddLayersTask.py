@@ -29,7 +29,7 @@ class AddLayersTask(QgsTask):
 
     taskCompleted = pyqtSignal(bool)
 
-    def __init__(self, description: str, layers_info: list[tuple[str, str, str]], group_name: str, styles_dir_path: Path, logger: logger.CustomLogger) -> None:
+    def __init__(self) -> None:
         """
         Initializes the AddLayersTask.
 
@@ -40,13 +40,19 @@ class AddLayersTask(QgsTask):
             styles_dir_path (Path): The directory path where style files are located.
             logger (Logger): Logger for logging messages.
         """
-        super().__init__(description, QgsTask.CanCancel)
+        super().__init__("Add Layers Task", QgsTask.CanCancel)
+        self.layers_info = []
+        self.group_name = ""
+        self.styles_dir_path = None
+        self.logger = None
+        self.prepared_layers = []  # Initialize prepared layers list
+        self.completed = False
+        
+    def setParameters(self, layers_info, group_name, styles_dir_path, logger):
         self.layers_info = layers_info
         self.group_name = group_name
         self.styles_dir_path = styles_dir_path
         self.logger = logger
-        self.prepared_layers = []  # Initialize prepared layers list
-        self.completed = False
 
     def run(self) -> bool:
         """
