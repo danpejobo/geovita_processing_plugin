@@ -544,20 +544,18 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
                     feedback.reportError(f"PROCESS - Error during reprojection of RASTER LAYER: {e}")
                     return {}
                 
-                # Get the file path of the raster layer
-                path_source_raster_rock_surface = source_raster_rock_surface.source().lower().split('|')[0]
-                self.logger.info(f"PROCESS - Rock raster DTM File path: {path_source_raster_rock_surface}")
-                feedback.pushInfo(f"PROCESS - Rock raster DTM File path: {path_source_raster_rock_surface}")
-                # Check if the file extension is .tif
-                if path_source_raster_rock_surface.endswith(('.tif', '.tiff')):
-                    feedback.pushInfo("PROCESS - The raster layer is a TIFF file.")
-                    # Continue processing...
-                else:
-                    feedback.reportError("PROCESS - The raster layer is not a TIFF file. Convert it to TIF/TIFF!")
-                    return {}
+            # Get the file path of the raster layer
+            path_source_raster_rock_surface = source_raster_rock_surface.source().lower().split('|')[0]
+            self.logger.info(f"PROCESS - Rock raster DTM File path: {path_source_raster_rock_surface}")
+            feedback.pushInfo(f"PROCESS - Rock raster DTM File path: {path_source_raster_rock_surface}")
+            # Check if the file extension is .tif
+            if path_source_raster_rock_surface.endswith(('.tif', '.tiff')):
+                feedback.pushInfo("PROCESS - The raster layer is a TIFF file.")
+                # Continue processing...
             else:
-                feedback.reportError("PROCESS - Something is wrong with the raster.")
+                feedback.reportError("PROCESS - The raster layer is not a TIFF file. Convert it to TIF/TIFF!")
                 return {}
+
             
             porepressure_index = self.parameterAsEnum(
                 parameters,

@@ -22,7 +22,8 @@ from qgis.core import (Qgis,
                        QgsProcessingContext,
                        QgsProcessingFeedback,
                        QgsCoordinateReferenceSystem,
-                       QgsRectangle)
+                       QgsRectangle,
+                       QgsProcessingException)
 
 from qgis import processing
 from pathlib import Path
@@ -273,13 +274,19 @@ def reproject_layers(output_crs: QgsCoordinateReferenceSystem,
 
     # Reproject vector layer
     if vector_layer is not None:
-        feedback.pushInfo(f"@reproject_layers@ - Vector layer to reproject: Valid: {vector_layer.isValid()}, Name: {vector_layer.name()}, Source: {vector_layer.source()}")
+        feedback.pushInfo(f"@reproject_layers@ - Vector layer to reproject: Name: {vector_layer.name()}, Source: {vector_layer.source()}")
         reprojected_vector_path = temp_folder / f"reprojected_{vector_layer.name()}.shp"
-        processing.run("native:reprojectlayer", {
-            'INPUT': vector_layer,
-            'TARGET_CRS': output_crs,
-            'OUTPUT': str(temp_folder)
-        }, context=context, feedback=feedback)
+        if logger:
+            logger.info(f"Attempting to reproject to: {reprojected_vector_path}")  # Log the output path
+
+        try:
+            processing.run("native:reprojectlayer", {
+                'INPUT': vector_layer,
+                'TARGET_CRS': output_crs,
+                'OUTPUT': str(reprojected_vector_path)
+            }, context=context, feedback=feedback)
+        except Exception as e:
+            raise QgsProcessingException(f"@reproject_layers@ - Error during vector reprojection: {str(e)}")
         
         reprojected_vector_layer = QgsVectorLayer(str(reprojected_vector_path), f"reprojected_{vector_layer.name()}.shp", 'ogr')
         if not reprojected_vector_layer.isValid():
@@ -289,14 +296,19 @@ def reproject_layers(output_crs: QgsCoordinateReferenceSystem,
                   
     # Reproject raster layer if provided
     if raster_layer is not None:
-        feedback.pushInfo(f"Raster layer to reproject: Valid: {raster_layer.isValid()}, Name: {raster_layer.name()}.tif, Source: {raster_layer.source()}")
+        feedback.pushInfo(f"Raster layer to reproject: Name: {raster_layer.name()}.tif, Source: {raster_layer.source()}")
         reprojected_raster_path = temp_folder / f"reprojected_{raster_layer.name()}.tif"
-        processing.run("gdal:warpreproject", {
-            'INPUT': raster_layer,
-            'SOURCE_CRS': raster_layer.crs(),
-            'TARGET_CRS': output_crs,
-            'OUTPUT': str(temp_folder)
-        }, context=context, feedback=feedback)
+        if logger:
+            logger.info(f"Attempting to reproject to: {reprojected_raster_path}")  # Log the output path
+        try:
+            processing.run("gdal:warpreproject", {
+                'INPUT': raster_layer,
+                'SOURCE_CRS': raster_layer.crs(),
+                'TARGET_CRS': output_crs,
+                'OUTPUT': str(reprojected_raster_path)
+            }, context=context, feedback=feedback)
+        except Exception as e:
+            raise QgsProcessingException(f"@reproject_layers@ - Error during raster reprojection: {str(e)}")
         
         reprojected_raster_layer = QgsRasterLayer(str(reprojected_raster_path), f"reprojected_{raster_layer.name()}.tif")
         if not reprojected_raster_layer.isValid():
