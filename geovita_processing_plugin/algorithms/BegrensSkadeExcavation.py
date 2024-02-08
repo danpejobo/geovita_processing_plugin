@@ -104,7 +104,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         self.logger.info(f"__INIT__ - Finished initialize BegrensSkadeExcavation ")
         
         self.feature_name = None  # Default value
-        self.output_shapefiles = None
+        self.layers_info = []
         
     # Constants used to refer to parameters and outputs. They will be
     # used when calling the algorithm from another algorithm, or when
@@ -650,7 +650,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         feedback.pushInfo(f"PROCESS - Param: fieldNameStatus = {status_field}")
         feedback.setProgress(50)
         try:
-            self.output_shapefiles = mainBegrensSkade_Excavation(
+            output_shapefiles = mainBegrensSkade_Excavation(
                 logger=self.logger,
                 buildingsFN=str(path_source_building_poly),
                 excavationJson=source_excavation_poly_as_json,
@@ -687,9 +687,9 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         
 #################### HANDLE THE RESULT ###############################
         feedback.setProgress(80)
-        self.logger.info(f"PROCESS - OUTPUT BUILDINGS: {self.output_shapefiles[0]}")
-        self.logger.info(f"PROCESS - OUTPUT WALL: {self.output_shapefiles[1]}")
-        self.logger.info(f"PROCESS - OUTPUT CORNER: {self.output_shapefiles[2]}")
+        self.logger.info(f"PROCESS - OUTPUT BUILDINGS: {output_shapefiles[0]}")
+        self.logger.info(f"PROCESS - OUTPUT WALL: {output_shapefiles[1]}")
+        self.logger.info(f"PROCESS - OUTPUT CORNER: {output_shapefiles[2]}")
         feedback.pushInfo("PROCESS - Finished with processing!")
         
         # Path to the "styles" directory
@@ -697,16 +697,16 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         self.logger.info(f"RESULTS - Styles directory path: {styles_dir_path}")
         
         self.layers_info = [
-        ("CORNERS-SETTLEMENT", self.output_shapefiles[2], f"{str(styles_dir_path)}/CORNERS-SETTLMENT_mm.qml"),
-        ("WALLS-ANGLE", self.output_shapefiles[1], f"{str(styles_dir_path)}/WALL-ANGLE.qml"),
-        ("BUILDING-TOTAL-SETTLMENT", self.output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-SETTLMENT_sv_tot.qml"),
-        ("BUILDING-TOTAL-ANGLE", self.output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-ANGLE_max_angle.qml")
+        ("CORNERS-SETTLEMENT", output_shapefiles[2], f"{str(styles_dir_path)}/CORNERS-SETTLMENT_mm.qml"),
+        ("WALLS-ANGLE", output_shapefiles[1], f"{str(styles_dir_path)}/WALL-ANGLE.qml"),
+        ("BUILDING-TOTAL-SETTLMENT", output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-SETTLMENT_sv_tot.qml"),
+        ("BUILDING-TOTAL-ANGLE", output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-ANGLE_max_angle.qml")
         ]
         # Add additional layers if bVulnerability is True
         if bVulnerability:
             self.layers_info.extend([
-                ("BUILDING-RISK-SETTLMENT", self.output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-RISK-SELLMENT_risk_tots.qml"),
-                ("BUILDING-RISK-ANGLE", self.output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-RISK-ANGLE_risk_angle.qml")
+                ("BUILDING-RISK-SETTLMENT", output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-RISK-SELLMENT_risk_tots.qml"),
+                ("BUILDING-RISK-ANGLE", output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-RISK-ANGLE_risk_angle.qml")
             ])
             
 # ######### EXPERIMENTAL ADD LAYERS TO GUI #########
