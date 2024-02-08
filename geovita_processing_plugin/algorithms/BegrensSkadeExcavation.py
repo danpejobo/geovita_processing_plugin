@@ -30,9 +30,8 @@ __copyright__ = '(C) 2023 by DPE'
 
 __revision__ = '$Format:%H$'
 
-from qgis.PyQt.QtCore import QCoreApplication, QEventLoop
+from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (Qgis,
-                       QgsApplication,
                        QgsProject,
                        QgsProcessing,
                        QgsProcessingParameterDefinition,
@@ -46,11 +45,14 @@ from qgis.core import (Qgis,
                        QgsProcessingParameterEnum,
                        QgsProcessingParameterField,
                        QgsMessageLog,
-                       QgsProcessingException,
+                       QgsVectorLayer,
+                       QgsLayerTreeGroup,
+                       QgsLayerTreeLayer,
                        )
 
 import traceback
 from pathlib import Path
+from datetime import datetime
 
 from .base_algorithm import GvBaseProcessingAlgorithms
 from ..utilities.AddLayersTask import AddLayersTask
@@ -100,6 +102,9 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         log_dir_path = home_dir / "Downloads" / "REMEDY" / "log"
         self.logger = CustomLogger(log_dir_path, "BegrensSkadeII_QGIS_EXCAVATION.log", "EXCAVATION_LOGGER").get_logger()
         self.logger.info(f"__INIT__ - Finished initialize BegrensSkadeExcavation ")
+        
+        self.feature_name = None  # Default value
+        self.output_shapefiles = None
         
     # Constants used to refer to parameters and outputs. They will be
     # used when calling the algorithm from another algorithm, or when
@@ -479,8 +484,8 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         
         self.logger.info(f"PROCESS - Output folder: {output_folder}")
         
-        feature_name = self.parameterAsString(parameters, self.OUTPUT_FEATURE_NAME, context)
-        self.logger.info(f"PROCESS - Feature name: {feature_name}")
+        self.feature_name = self.parameterAsString(parameters, self.OUTPUT_FEATURE_NAME, context)
+        self.logger.info(f"PROCESS - Feature name: {self.feature_name}")
         
         output_proj = self.parameterAsCrs(parameters, self.OUTPUT_CRS, context)
         output_srid = output_proj.postgisSrid()
@@ -620,9 +625,9 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         feedback.pushInfo("PROCESS - Running mainBegrensSkade_Excavation...")
         self.logger.info("PROCESS - Running mainBegrensSkade_Excavation...")
         feedback.pushInfo(f"PROCESS - Param: buildingsFN = {path_source_building_poly}")
-        feedback.pushInfo(f"PROCESS - Param: excavationJson = {source_excavation_poly_as_json}")
+        feedback.pushInfo(f"PROCESS - Param: excavationJson = {source_excavation_poly_as_json.keys()}")
         feedback.pushInfo(f"PROCESS - Param: Output folder = {output_folder}")
-        feedback.pushInfo(f"PROCESS - Param: feature_name = {feature_name}")
+        feedback.pushInfo(f"PROCESS - Param: feature_name = {self.feature_name}")
         feedback.pushInfo(f"PROCESS - Param: output_proj = {output_srid}")
         feedback.pushInfo(f"PROCESS - Param: bShortterm = {bShortterm}")
         feedback.pushInfo(f"PROCESS - Param: excavation_depth = {excavation_depth}")
@@ -645,12 +650,12 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         feedback.pushInfo(f"PROCESS - Param: fieldNameStatus = {status_field}")
         feedback.setProgress(50)
         try:
-            output_shapefiles = mainBegrensSkade_Excavation(
+            self.output_shapefiles = mainBegrensSkade_Excavation(
                 logger=self.logger,
                 buildingsFN=str(path_source_building_poly),
                 excavationJson=source_excavation_poly_as_json,
                 output_ws=output_folder,
-                feature_name=feature_name,
+                feature_name=self.feature_name,
                 output_proj=output_srid,
                 bShortterm=bShortterm,
                 excavation_depth=excavation_depth,
@@ -682,57 +687,119 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         
 #################### HANDLE THE RESULT ###############################
         feedback.setProgress(80)
-        self.logger.info(f"PROCESS - OUTPUT BUILDINGS: {output_shapefiles[0]}")
-        self.logger.info(f"PROCESS - OUTPUT WALL: {output_shapefiles[1]}")
-        self.logger.info(f"PROCESS - OUTPUT CORNER: {output_shapefiles[2]}")
+        self.logger.info(f"PROCESS - OUTPUT BUILDINGS: {self.output_shapefiles[0]}")
+        self.logger.info(f"PROCESS - OUTPUT WALL: {self.output_shapefiles[1]}")
+        self.logger.info(f"PROCESS - OUTPUT CORNER: {self.output_shapefiles[2]}")
         feedback.pushInfo("PROCESS - Finished with processing!")
         
         # Path to the "styles" directory
         styles_dir_path = Path(__file__).resolve().parent.parent / "styles"
         self.logger.info(f"RESULTS - Styles directory path: {styles_dir_path}")
         
-        layers_info = [
-        ("CORNERS-SETTLEMENT", output_shapefiles[2], "CORNERS-SETTLMENT_mm.qml"),
-        ("WALLS-ANGLE", output_shapefiles[1], "WALL-ANGLE.qml"),
-        ("BUILDING-TOTAL-SETTLMENT", output_shapefiles[0], "BUILDING-TOTAL-SETTLMENT_sv_tot.qml"),
-        ("BUILDING-TOTAL-ANGLE", output_shapefiles[0], "BUILDING-TOTAL-ANGLE_max_angle.qml")
+        self.layers_info = [
+        ("CORNERS-SETTLEMENT", self.output_shapefiles[2], f"{str(styles_dir_path)}/CORNERS-SETTLMENT_mm.qml"),
+        ("WALLS-ANGLE", self.output_shapefiles[1], f"{str(styles_dir_path)}/WALL-ANGLE.qml"),
+        ("BUILDING-TOTAL-SETTLMENT", self.output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-SETTLMENT_sv_tot.qml"),
+        ("BUILDING-TOTAL-ANGLE", self.output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-ANGLE_max_angle.qml")
         ]
         # Add additional layers if bVulnerability is True
         if bVulnerability:
-            layers_info.extend([
-                ("BUILDING-RISK-SETTLMENT", output_shapefiles[0], "BUILDING-TOTAL-RISK-SELLMENT_risk_tots.qml"),
-                ("BUILDING-RISK-ANGLE", output_shapefiles[0], "BUILDING-TOTAL-RISK-ANGLE_risk_angle.qml")
+            self.layers_info.extend([
+                ("BUILDING-RISK-SETTLMENT", self.output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-RISK-SELLMENT_risk_tots.qml"),
+                ("BUILDING-RISK-ANGLE", self.output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-RISK-ANGLE_risk_angle.qml")
             ])
             
-######### EXPERIMENTAL ADD LAYERS TO GUI #########
-        # Create the task
-        add_layers_task = AddLayersTask("Add Layers", layers_info, feature_name, styles_dir_path, self.logger)
-        # Local event loop
-        loop = QEventLoop()
-        # Define a slot to handle the task completion
-        def onTaskCompleted(success):
-            if success:
-                feedback.pushInfo("RESULTS - Layers added successfully.")
-            else:
-                feedback.reportError("RESULTS - Failed to add layers.")
-            loop.quit()  # Quit the event loop
+# ######### EXPERIMENTAL ADD LAYERS TO GUI #########
+#         # Create the task
+#         add_layers_task = AddLayersTask("Add Layers", layers_info, feature_name, styles_dir_path, self.logger)
+#         # Local event loop
+#         loop = QEventLoop()
+#         # Define a slot to handle the task completion
+#         def onTaskCompleted(success):
+#             if success:
+#                 feedback.pushInfo("RESULTS - Layers added successfully.")
+#             else:
+#                 feedback.reportError("RESULTS - Failed to add layers.")
+#             loop.quit()  # Quit the event loop
             
-        # Connect the task's completed signal to the slot
-        add_layers_task.taskCompleted.connect(onTaskCompleted)
+#         # Connect the task's completed signal to the slot
+#         add_layers_task.taskCompleted.connect(onTaskCompleted)
 
-        # Start the task
-        QgsApplication.taskManager().addTask(add_layers_task)
-        # Start the event loop
-        loop.exec_()
+#         # Start the task
+#         QgsApplication.taskManager().addTask(add_layers_task)
+#         # Start the event loop
+#         loop.exec_()
 
-        # Check if the task was successful
-        if not add_layers_task.completed:
-            raise QgsProcessingException("Error occurred while adding layers.")
+#         # Check if the task was successful
+#         if not add_layers_task.completed:
+#             raise QgsProcessingException("Error occurred while adding layers.")
         
         feedback.setProgress(100)
-        feedback.pushInfo(f"RESULTS - Finished adding results!")
         return {
-            self.OUTPUT_BUILDING: output_shapefiles[0],
-            self.OUTPUT_WALL: output_shapefiles[1],
-            self.OUTPUT_CORNER: output_shapefiles[2],
+            self.OUTPUT_BUILDING: self.output_shapefiles[0],
+            self.OUTPUT_WALL: self.output_shapefiles[1],
+            self.OUTPUT_CORNER: self.output_shapefiles[2],
         }
+    
+    def postProcessAlgorithm(self, context, feedback):
+        # Assuming 'self.layers_info' is available and contains tuples of layer name, path, and style path
+        # 'group_name' is the name of the group you want to add your layers to
+        group_name = self.feature_name
+
+        # Initialize a list to keep track of loaded layers for adding to a group
+        loaded_layers = []
+        
+        project = context.project() if context.project() else QgsProject.instance()
+        root = project.layerTreeRoot()
+
+        # Iterate through each layer's information in self.layers_info
+        for layer_name, layer_path, style_path in self.layers_info:
+
+            if not Path(layer_path).is_file():
+                feedback.reportError(f"POSTPROCESS - Failed to find layer from path: {layer_path}")
+                continue  # Skip to the next layer if this one fails to load
+            
+            # Generate a timestamp string
+            timestamp = datetime.now().strftime("_%Y%m%d_%H:%M")
+            modified_layer_name = f"{layer_name}{timestamp}"
+
+            # Load the layer
+            layer = QgsVectorLayer(layer_path, modified_layer_name, "ogr")
+            if not layer.isValid():
+                self.logger.error(f"POSTPROCESS - Failed to load layer: {layer_path}")
+                return False
+
+            # Keep track of the loaded layer
+            loaded_layers.append((layer, style_path))
+
+        # Add layers to the QGIS project
+        if not loaded_layers:
+            feedback.reportError("POSTPROCESS - failed to load layers. Try manually!")
+            return {}
+            
+        for layer, style_path in loaded_layers:
+            # Apply the style and trigger refresh of layer
+            layer.loadNamedStyle(style_path)
+            layer.triggerRepaint()
+            
+            if group_name:
+                group = root.findGroup(group_name)
+                if not group:
+                    group = QgsLayerTreeGroup(group_name)
+                    root.insertChildNode(0, group)
+                    self.logger.debug(f"POSTPROCESS - Created new group '{group_name}' and added it to the top of the Layer Tree.")
+                    feedback.pushInfo(f"POSTPROCESS - Created new group '{group_name}' and added it to the top of the Layer Tree.")
+                project.addMapLayer(layer, False)
+                node_layer = QgsLayerTreeLayer(layer)
+                node_layer.setItemVisibilityChecked(True)
+                group.addChildNode(node_layer)
+                self.logger.debug(f"POSTPROCESS - Added layer '{layer.name()}' to group '{group_name}'.")
+                feedback.pushInfo(f"POSTPROCESS - Added layer '{layer.name()}' to group '{group_name}'.")
+            else:
+                project.addMapLayer(layer, True)
+                self.logger.info(f"POSTPROCESS - Layer '{layer.name()}' added to QGIS.")
+                feedback.pushInfo(f"POSTPROCESS - Layer '{layer.name()}' added to QGIS.")
+           
+        feedback.pushInfo("POSTPROCESS - Layers loaded and organized into the group successfully.")
+
+        return {}
