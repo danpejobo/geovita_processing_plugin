@@ -121,7 +121,7 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipp
             'OPTIONS': '',
             'DATA_TYPE': 0,  # Use 5 for Float32
             'OUTPUT': str(dtb_clip_raster_path)
-        })
+        }, is_child_algorithm=True, context=context, feedback=feedback)
         dtb_raster_layer = QgsRasterLayer(str(dtb_clip_raster_path), "clip_temp-raster")
         if dtb_raster_layer.crs().isValid():
             logger.debug(f"@process_raster_for_impactmap@ - CRS Description: {dtb_raster_layer.crs().description()}")
@@ -151,7 +151,7 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipp
             'RESAMPLING': 0,  # 0 for Nearest Neighbour
             'TARGET_RESOLUTION': output_resolution,
             'OUTPUT': str(dtb_raster_resample_path)
-        })
+        }, is_child_algorithm=True, context=context, feedback=feedback)
         dtb_raster_layer = QgsRasterLayer(str(dtb_raster_resample_path), "resampl_temp-raster")
         if dtb_raster_layer.crs().isValid():
             logger.debug(f"@process_raster_for_impactmap@ - CRS Description: {dtb_raster_layer.crs().description()}")
@@ -284,7 +284,7 @@ def reproject_layers(output_crs: QgsCoordinateReferenceSystem,
                 'INPUT': vector_layer,
                 'TARGET_CRS': output_crs,
                 'OUTPUT': str(reprojected_vector_path)
-            }, context=context, feedback=feedback)
+            }, is_child_algorithm=True, context=context, feedback=feedback)
         except Exception as e:
             raise QgsProcessingException(f"@reproject_layers@ - Error during vector reprojection: {str(e)}")
         
@@ -306,7 +306,7 @@ def reproject_layers(output_crs: QgsCoordinateReferenceSystem,
                 'SOURCE_CRS': raster_layer.crs(),
                 'TARGET_CRS': output_crs,
                 'OUTPUT': str(reprojected_raster_path)
-            }, context=context, feedback=feedback)
+            }, is_child_algorithm=True, context=context, feedback=feedback)
         except Exception as e:
             raise QgsProcessingException(f"@reproject_layers@ - Error during raster reprojection: {str(e)}")
         
@@ -364,7 +364,8 @@ def create_temp_folder_for_version(qgis_version_int : int, context: QgsProcessin
         temp_folder.mkdir(parents=True, exist_ok=True)
     else:
         # For older versions, or if no context is provided, use the global Processing temporary folder
-        temp_folder = Path(QgsProcessingUtils.tempFolder())
+        temp_folder = QgsProcessingUtils.tempFolder()
+        temp_folder = Path(temp_folder)
         temp_folder.mkdir(parents=True, exist_ok=True)
         
     return temp_folder
