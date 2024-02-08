@@ -239,8 +239,7 @@ def reproject_is_needed(layer: Union[QgsVectorLayer, QgsRasterLayer],
     else:
         return False
     
-def reproject_layers(keep_interm_layer: bool,
-                     output_crs: QgsCoordinateReferenceSystem, 
+def reproject_layers(output_crs: QgsCoordinateReferenceSystem, 
                      output_folder: Path, 
                      vector_layer: QgsVectorLayer = None,
                      raster_layer: QgsRasterLayer = None, 
@@ -250,7 +249,6 @@ def reproject_layers(keep_interm_layer: bool,
     Reprojects vector and optionally raster layers to a specified CRS.
 
     Args:
-    - keep_interm_layer (bool): Save the reprojected layers in the output directory
     - output_crs (QgsCoordinateReferenceSystem): The desired output CRS.
     - output_folder (Path): The folder path where the reprojected layers will be saved.
     - vector_layer (QgsVectorLayer, optional): The vector layer to be reprojected, or None if not applicable.
@@ -285,17 +283,11 @@ def reproject_layers(keep_interm_layer: bool,
             'OUTPUT': str(reprojected_vector_path)
         }, context=context, feedback=feedback)
         
-        # Determine the final path based on the keep_interm_layer flag
-        final_vector_path = output_folder / f"reprojected_{vector_layer.name()}.shp" if keep_interm_layer else reprojected_vector_path
-        if keep_interm_layer:
-            move_file_components(reprojected_vector_path, final_vector_path)
-            
-        reprojected_vector_layer = QgsVectorLayer(str(final_vector_path), f"reprojected_{vector_layer.name()}.shp", 'ogr')
+        reprojected_vector_layer = QgsVectorLayer(str(reprojected_vector_path), f"reprojected_{vector_layer.name()}.shp", 'ogr')
         if not reprojected_vector_layer.isValid():
-            raise Exception(f"@reproject_layers@ - Failed to load reprojected vector layer from {final_vector_path}")
-        feedback.pushInfo(f"@reproject_layers@ - VECTOR layer reprojected and saved to {final_vector_path}, NEW CRS: {reprojected_vector_layer.crs().postgisSrid()}")
+            raise Exception(f"@reproject_layers@ - Failed to load reprojected vector layer from {reprojected_vector_layer}")
         if logger:
-            logger.info(f"@reproject_layers@ - VECTOR layer reprojected and saved to {final_vector_path}")
+            logger.info(f"@reproject_layers@ - VECTOR layer reprojected to CRS: {reprojected_vector_layer.crs().postgisSrid()}")
                   
     # Reproject raster layer if provided
     if raster_layer is not None:
@@ -308,16 +300,11 @@ def reproject_layers(keep_interm_layer: bool,
             'OUTPUT': str(reprojected_raster_path)
         }, context=context, feedback=feedback)
         
-        # Save the reprojected raster layer to the output folder, else return the temporary interm. layer
-        final_raster_path = output_folder / f"reprojected_{raster_layer.name()}.tif" if keep_interm_layer else reprojected_raster_path
-        if keep_interm_layer:
-            move_file_components(reprojected_raster_path, final_raster_path)
-        reprojected_raster_layer = QgsRasterLayer(str(final_raster_path), f"reprojected_{raster_layer.name()}.tif")
+        reprojected_raster_layer = QgsRasterLayer(str(reprojected_raster_path), f"reprojected_{raster_layer.name()}.tif")
         if not reprojected_raster_layer.isValid():
-            raise Exception(f"@reproject_layers@ - Failed to load reprojected raster layer from {final_raster_path}")
-        feedback.pushInfo(f"@reproject_layers@ - RASTER layer reprojected and saved to {final_raster_path}, NEW CRS: {reprojected_raster_layer.crs().postgisSrid()}")
+            raise Exception(f"@reproject_layers@ - Failed to load reprojected raster layer from {reprojected_raster_path}")
         if logger:
-            logger.info(f"@reproject_layers@ - RASTER layer reprojected and saved to {final_raster_path}")       
+            logger.info(f"@reproject_layers@ - RASTER layer reprojected to CRS: {reprojected_raster_layer.crs().postgisSrid()}")       
 
     return reprojected_vector_layer, reprojected_raster_layer
 

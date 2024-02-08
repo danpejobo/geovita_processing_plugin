@@ -115,7 +115,6 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
     
     INPUT_BUILDING_POLY = 'INPUT_BUILDING_POLY'
     INPUT_EXCAVATION_POLY = 'INPUT_EXCAVATION_POLY'
-    INTERMEDIATE_LAYERS = ['INTERMEDIATE_LAYERS', 'Keep reprojected layers? (No point if you save to a temp folder)']
     
     SHORT_TERM_SETTLEMENT = ['SHORT_TERM_SETTLEMENT', 'Short term settlements']
     EXCAVATION_DEPTH = ['EXCAVATION_DEPTH', 'Depth of excavation [m]']
@@ -405,12 +404,6 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
                 defaultValue=QgsProject.instance().crs(),
             )
         )
-        param = QgsProcessingParameterBoolean(
-                        self.INTERMEDIATE_LAYERS[0],
-                        self.tr(f'{self.INTERMEDIATE_LAYERS[1]}'),
-                        defaultValue=False
-                    )
-        self.addParameter(param)
         self.addParameter(
             QgsProcessingParameterFolderDestination(
                 self.OUTPUT_FOLDER,
@@ -456,15 +449,8 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
             context
         )
         self.logger.info(f"PROCESS - bVulnerability value: {bVulnerability}")
-        
-        bIntermediate = self.parameterAsBoolean(
-            parameters,
-            self.INTERMEDIATE_LAYERS[0],
-            context
-        )
         feedback.setProgress(10)
-        self.logger.info(f"PROCESS - bIntermediate value: {bIntermediate}")
-        
+
         source_building_poly = self.parameterAsVectorLayer(
             parameters,
             self.INPUT_BUILDING_POLY,
@@ -498,14 +484,14 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         if reproject_is_needed(source_building_poly, output_proj):
             feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_building_poly.name()}, ORIGINAL CRS: {source_building_poly.crs().postgisSrid()}")
             try:
-                source_building_poly, _ = reproject_layers(bIntermediate, output_proj, output_folder_path, source_building_poly, raster_layer=None, context=context, logger=self.logger)
+                source_building_poly, _ = reproject_layers(output_proj, output_folder_path, source_building_poly, raster_layer=None, context=context, logger=self.logger)
             except Exception as e:
                 feedback.reportError(f"Error during reprojection of BUILDINGS: {e}")
                 return {}
         if reproject_is_needed(source_excavation_poly, output_proj):
             feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_excavation_poly.name()}, ORIGINAL CRS: {source_excavation_poly.crs().postgisSrid()}")
             try:
-                source_excavation_poly, _ = reproject_layers(bIntermediate, output_proj, output_folder_path, source_excavation_poly, raster_layer=None, context=context, logger=self.logger)
+                source_excavation_poly, _ = reproject_layers(output_proj, output_folder_path, source_excavation_poly, raster_layer=None, context=context, logger=self.logger)
             except Exception as e:
                 feedback.reportError(f"Error during reprojection of EXCAVATION: {e}")
                 return {}
@@ -549,7 +535,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
                 if reproject_is_needed(source_raster_rock_surface, output_proj):
                     feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_raster_rock_surface.name()}, ORIGINAL CRS: {source_raster_rock_surface.crs().postgisSrid()}")
                     try:
-                        _, source_raster_rock_surface = reproject_layers(bIntermediate, output_proj, output_folder_path, vector_layer=None, raster_layer=source_raster_rock_surface, context=context, logger=self.logger)
+                        _, source_raster_rock_surface = reproject_layers(output_proj, output_folder_path, vector_layer=None, raster_layer=source_raster_rock_surface, context=context, logger=self.logger)
                     except Exception as e:
                         feedback.reportError(f"PROCESS - Error during reprojection of RASTER LAYER: {e}")
                         return {}

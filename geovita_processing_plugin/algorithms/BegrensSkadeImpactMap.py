@@ -108,7 +108,6 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
     # calling from the QGIS console.
     
     INPUT_EXCAVATION_POLY = 'INPUT_EXCAVATION_POLY'
-    INTERMEDIATE_LAYERS = ['INTERMEDIATE_LAYERS', 'Keep reprojected layers? (No point if you save to a temp folder)']
     OUTPUT_FOLDER = 'OUTPUT_FOLDER'
     OUTPUT_FEATURE_NAME = 'OUTPUT_FEATURE_NAME'
     
@@ -180,12 +179,6 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
                 defaultValue=QgsProject.instance().crs(),
             )
         )
-        param = QgsProcessingParameterBoolean(
-                        self.INTERMEDIATE_LAYERS[0],
-                        self.tr(f'{self.INTERMEDIATE_LAYERS[1]}'),
-                        defaultValue=False
-                    )
-        self.addParameter(param)
         param = QgsProcessingParameterNumber(
                         self.OUTPUT_RESOLUTION[0],
                         self.tr(f'{self.OUTPUT_RESOLUTION[1]}'),
@@ -328,13 +321,6 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
             context
         )
         self.logger.info(f"PROCESS - bShortterm value: {bShortterm}")
-        
-        bIntermediate = self.parameterAsBoolean(
-            parameters,
-            self.INTERMEDIATE_LAYERS[0],
-            context
-        )
-        self.logger.info(f"PROCESS - bIntermediate value: {bIntermediate}")
               
         feature_name = self.parameterAsString(
                 parameters,
@@ -388,7 +374,7 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
             if reproject_is_needed(source_raster_rock_surface, output_proj):
                 feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_raster_rock_surface.name()}, ORIGINAL CRS: {source_raster_rock_surface.crs().postgisSrid()}")
                 try:
-                    _, source_raster_rock_surface = reproject_layers(bIntermediate, output_proj, output_folder_path, vector_layer=None, raster_layer=source_raster_rock_surface, context=context, logger=self.logger)
+                    _, source_raster_rock_surface = reproject_layers(output_proj, output_folder_path, vector_layer=None, raster_layer=source_raster_rock_surface, context=context, logger=self.logger)
                 except Exception as e:
                     feedback.reportError(f"Error during reprojection of RASTER LAYER: {e}")
                     return {}
@@ -411,7 +397,7 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         if reproject_is_needed(source_excavation_poly, output_proj):
             feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_excavation_poly.name()}, ORIGINAL CRS: {source_excavation_poly.crs().postgisSrid()}")
             try:
-                source_excavation_poly, _ = reproject_layers(bIntermediate, output_proj, output_folder_path, vector_layer=source_excavation_poly, raster_layer=None, context=context, logger=self.logger)
+                source_excavation_poly, _ = reproject_layers(output_proj, output_folder_path, vector_layer=source_excavation_poly, raster_layer=None, context=context, logger=self.logger)
             except Exception as e:
                 feedback.reportError(f"Error during reprojection of EXCAVATION: {e}")
                 return {}
@@ -432,8 +418,6 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
                                                                        output_crs=output_proj,
                                                                        context=context,
                                                                        logger=self.logger)
-        self.logger.info(f"PROCESS - Intermediate raster path: {str(path_processed_raster)}")
-        feedback.pushInfo(f"PROCESS - Intermediate raster path: {str(path_processed_raster)}")
         feedback.pushInfo("PROCESS - Done running process_raster_for_impactmap...")
         feedback.setProgress(30)
         if bShortterm:
