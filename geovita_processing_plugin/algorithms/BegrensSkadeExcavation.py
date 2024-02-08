@@ -48,6 +48,7 @@ from qgis.core import (Qgis,
                        QgsVectorLayer,
                        QgsLayerTreeGroup,
                        QgsLayerTreeLayer,
+                       QgsProcessingException
                        )
 
 import traceback
@@ -530,15 +531,18 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         if bLongterm:
             self.logger.info(f"PROCESS - ######## LONGTERM ########")
         ############### HANDELING OF INPUT RASTER ################
-            if source_raster_rock_surface is not None:
-            ############### RASTER REPROJECT ################
-                if reproject_is_needed(source_raster_rock_surface, output_proj):
-                    feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_raster_rock_surface.name()}, ORIGINAL CRS: {source_raster_rock_surface.crs().postgisSrid()}")
-                    try:
-                        _, source_raster_rock_surface = reproject_layers(output_proj, vector_layer=None, raster_layer=source_raster_rock_surface, context=context, logger=self.logger)
-                    except Exception as e:
-                        feedback.reportError(f"PROCESS - Error during reprojection of RASTER LAYER: {e}")
-                        return {}
+            if source_raster_rock_surface is None:
+                feedback.reportError(f"PROCESS - No raster chosen! Chose a raster to perform long-term analysis")
+                raise QgsProcessingException(self.invalidRasterError(parameters, self.RASTER_ROCK_SURFACE[0]))
+        
+        ############### RASTER REPROJECT ################
+            if reproject_is_needed(source_raster_rock_surface, output_proj):
+                feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_raster_rock_surface.name()}, ORIGINAL CRS: {source_raster_rock_surface.crs().postgisSrid()}")
+                try:
+                    _, source_raster_rock_surface = reproject_layers(output_proj, vector_layer=None, raster_layer=source_raster_rock_surface, context=context, logger=self.logger)
+                except Exception as e:
+                    feedback.reportError(f"PROCESS - Error during reprojection of RASTER LAYER: {e}")
+                    return {}
                 
                 # Get the file path of the raster layer
                 path_source_raster_rock_surface = source_raster_rock_surface.source().lower().split('|')[0]

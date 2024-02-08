@@ -292,9 +292,9 @@ def reproject_layers(output_crs: QgsCoordinateReferenceSystem,
         feedback.pushInfo(f"Raster layer to reproject: Valid: {raster_layer.isValid()}, Name: {raster_layer.name()}.tif, Source: {raster_layer.source()}")
         reprojected_raster_path = temp_folder / f"reprojected_{raster_layer.name()}.tif"
         processing.run("gdal:warpreproject", {
-            'INPUT': raster_layer.source(),
-            'SOURCE_CRS': raster_layer.crs().authid(),
-            'TARGET_CRS': output_crs.authid(),
+            'INPUT': raster_layer,
+            'SOURCE_CRS': raster_layer.crs(),
+            'TARGET_CRS': output_crs,
             'OUTPUT': str(reprojected_raster_path)
         }, context=context, feedback=feedback)
         
