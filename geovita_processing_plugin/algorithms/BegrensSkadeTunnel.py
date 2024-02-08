@@ -439,14 +439,14 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         if reproject_is_needed(source_building_poly, output_proj):
             feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_building_poly.name()}, ORIGINAL CRS: {source_building_poly.crs().postgisSrid()}")
             try:
-                source_building_poly, _ = reproject_layers(output_proj, output_folder_path, vector_layer=source_building_poly, raster_layer=None, context=context, logger=self.logger)
+                source_building_poly, _ = reproject_layers(output_proj, vector_layer=source_building_poly, raster_layer=None, context=context, logger=self.logger)
             except Exception as e:
                 feedback.reportError(f"Error during reprojection of BUILDINGS: {e}")
                 return {}
         if reproject_is_needed(source_tunnel_poly, output_proj):
             feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_tunnel_poly.name()}, ORIGINAL CRS: {source_tunnel_poly.crs().postgisSrid()}")
             try:
-                source_tunnel_poly, _ = reproject_layers(output_proj, output_folder_path, vector_layer=source_tunnel_poly, raster_layer=None, context=context, logger=self.logger)
+                source_tunnel_poly, _ = reproject_layers(output_proj, vector_layer=source_tunnel_poly, raster_layer=None, context=context, logger=self.logger)
             except Exception as e:
                 feedback.reportError(f"Error during reprojection of EXCAVATION: {e}")
                 return {}
@@ -485,7 +485,7 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                 if reproject_is_needed(source_raster_rock_surface, output_proj):
                     feedback.pushInfo(f"PROCESS - Reprojection needed for layer: {source_raster_rock_surface.name()}, ORIGINAL CRS: {source_raster_rock_surface.crs().postgisSrid()}")
                     try:
-                        _, source_raster_rock_surface = reproject_layers(output_proj, output_folder_path, vector_layer=None, raster_layer=source_raster_rock_surface, context=context, logger=self.logger)
+                        _, source_raster_rock_surface = reproject_layers(output_proj, vector_layer=None, raster_layer=source_raster_rock_surface, context=context, logger=self.logger)
                     except Exception as e:
                         feedback.reportError(f"Error during reprojection of RASTER LAYER: {e}")
                         return {}

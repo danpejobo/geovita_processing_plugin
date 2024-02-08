@@ -240,7 +240,6 @@ def reproject_is_needed(layer: Union[QgsVectorLayer, QgsRasterLayer],
         return False
     
 def reproject_layers(output_crs: QgsCoordinateReferenceSystem, 
-                     output_folder: Path, 
                      vector_layer: QgsVectorLayer = None,
                      raster_layer: QgsRasterLayer = None, 
                      context: QgsProcessingContext = None, 
@@ -250,14 +249,13 @@ def reproject_layers(output_crs: QgsCoordinateReferenceSystem,
 
     Args:
     - output_crs (QgsCoordinateReferenceSystem): The desired output CRS.
-    - output_folder (Path): The folder path where the reprojected layers will be saved.
     - vector_layer (QgsVectorLayer, optional): The vector layer to be reprojected, or None if not applicable.
     - raster_layer (QgsRasterLayer, optional): The raster layer to be reprojected, or None if not applicable.
     - context (QgsProcessingContext, optional): The context for processing. Default is None.
     - logger (logging.Logger, optional): Logger for logging messages. Default is None.
 
     Returns:
-    - Tuple: (reprojected_vector_path, reprojected_raster_path) Paths to the reprojected layers.
+    - Tuple: (reprojected_vector_layer, reprojected_raster_layer) Paths to the reprojected layers.
     """
     # Prepare processing context and feedback
     if not context:
