@@ -282,7 +282,7 @@ def reproject_layers(output_crs: QgsCoordinateReferenceSystem,
         try:
             processing.run("native:reprojectlayer", {
                 'INPUT': vector_layer,
-                'TARGET_CRS': output_crs,
+                'TARGET_CRS': output_crs.authid(),
                 'OUTPUT': str(reprojected_vector_path)
             }, is_child_algorithm=True, context=context, feedback=feedback)
         except Exception as e:
@@ -302,7 +302,7 @@ def reproject_layers(output_crs: QgsCoordinateReferenceSystem,
             logger.info(f"Attempting to reproject to: {reprojected_raster_path}")  # Log the output path
         try:
             processing.run("gdal:warpreproject", {
-                'INPUT': raster_layer,
+                'INPUT': raster_layer.source(),
                 'SOURCE_CRS': raster_layer.crs(),
                 'TARGET_CRS': output_crs,
                 'OUTPUT': str(reprojected_raster_path)
