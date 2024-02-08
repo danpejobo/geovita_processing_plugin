@@ -40,9 +40,9 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         self.raster_rock_surface_path = self.data_dir / 'DTB-dummy-25833-clip.tif'
 
         # Assuming these layers exist for testing purposes
-        self.building_layer = QgsVectorLayer(str(self.building_layer_path), 'test_building', 'ogr')
-        self.excavation_layer = QgsVectorLayer(str(self.excavation_layer_path), 'test_excavation', 'ogr')
-        self.raster_rock_surface_layer = QgsRasterLayer(str(self.raster_rock_surface_path), 'test_raster_rock_surface')
+        self.building_layer = QgsVectorLayer(str(self.building_layer_path), 'test_bygninger', 'ogr')
+        self.excavation_layer = QgsVectorLayer(str(self.excavation_layer_path), 'test_byggegrop', 'ogr')
+        self.raster_rock_surface_layer = QgsRasterLayer(str(self.raster_rock_surface_path), 'test_DTB-dummy-25833-clip')
 
         # Ensure layers are valid
         self.assertTrue(self.building_layer.isValid(), "Building layer failed to load.")
@@ -62,7 +62,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
             'SHORT_TERM_SETTLEMENT': True,
             'EXCAVATION_DEPTH': 10.0,
             'SETTLEMENT_ENUM': 1, #index
-            'LONG_TERM_SETTLEMENT': True,
+            'LONG_TERM_SETTLEMENT': False,
             'RASTER_ROCK_SURFACE': self.raster_rock_surface_layer,
             'POREPRESSURE_ENUM': 1, #index
             'POREPRESSURE_REDUCTION': 50,
