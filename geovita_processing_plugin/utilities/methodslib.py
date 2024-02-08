@@ -301,13 +301,18 @@ def reproject_layers(keep_interm_layer: bool,
     if raster_layer is not None:
         feedback.pushInfo(f"Raster layer to reproject: Valid: {raster_layer.isValid()}, Name: {raster_layer.name()}.tif, Source: {raster_layer.source()}")
         reprojected_raster_path = temp_folder / f"reprojected_{raster_layer.name()}.tif"
+        if logger:
+            logger.info(f"@reproject_layers@ - Raster to reproject 'INPUT': {raster_layer.source()}")
+            logger.info(f"@reproject_layers@ - Raster to reproject 'SOURCE_CRS': {raster_layer.crs().authid()}")
+            logger.info(f"@reproject_layers@ - Raster to reproject 'TARGET_CRS': {output_crs.authid()}")
         processing.run("gdal:warpreproject", {
             'INPUT': raster_layer.source(),
             'SOURCE_CRS': raster_layer.crs().authid(),
             'TARGET_CRS': output_crs.authid(),
             'OUTPUT': str(reprojected_raster_path)
         }, context=context, feedback=feedback)
-        
+        if logger:
+            logger.info(f"@reproject_layers@ - Raster to reproject 'OUTPUT': {str(reprojected_raster_path)}")
         # Save the reprojected raster layer to the output folder, else return the temporary interm. layer
         final_raster_path = output_folder / f"reprojected_{raster_layer.name()}.tif" if keep_interm_layer else reprojected_raster_path
         if keep_interm_layer:
