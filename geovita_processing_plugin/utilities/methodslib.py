@@ -303,12 +303,12 @@ def reproject_layers(keep_interm_layer: bool,
         reprojected_raster_path = temp_folder / f"reprojected_{raster_layer.name()}.tif"
         if logger:
             logger.info(f"@reproject_layers@ - Raster to reproject 'INPUT': {raster_layer.source()}")
-            logger.info(f"@reproject_layers@ - Raster to reproject 'SOURCE_CRS': {raster_layer.crs().authid()}")
-            logger.info(f"@reproject_layers@ - Raster to reproject 'TARGET_CRS': {output_crs.authid()}")
+            logger.info(f"@reproject_layers@ - Raster to reproject 'SOURCE_CRS': {raster_layer.crs()}")
+            logger.info(f"@reproject_layers@ - Raster to reproject 'TARGET_CRS': {output_crs}")
         processing.run("gdal:warpreproject", {
             'INPUT': raster_layer.source(),
-            'SOURCE_CRS': raster_layer.crs().authid(),
-            'TARGET_CRS': output_crs.authid(),
+            'SOURCE_CRS': raster_layer.crs(),
+            'TARGET_CRS': output_crs,
             'OUTPUT': str(reprojected_raster_path)
         }, context=context, feedback=feedback)
         if logger:
