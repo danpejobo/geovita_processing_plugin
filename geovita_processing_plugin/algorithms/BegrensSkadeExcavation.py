@@ -105,7 +105,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         self.logger.info(f"__INIT__ - Finished initialize BegrensSkadeExcavation ")
         
         self.feature_name = None  # Default value
-        self.layers_info = []
+        self.layers_info = {}
         
     # Constants used to refer to parameters and outputs. They will be
     # used when calling the algorithm from another algorithm, or when
@@ -684,18 +684,50 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         styles_dir_path = Path(__file__).resolve().parent.parent / "styles"
         self.logger.info(f"RESULTS - Styles directory path: {styles_dir_path}")
         
-        self.layers_info = [
-        ("CORNERS-SETTLEMENT", output_shapefiles[2], f"{str(styles_dir_path)}/CORNERS-SETTLMENT_mm.qml"),
-        ("WALLS-ANGLE", output_shapefiles[1], f"{str(styles_dir_path)}/WALL-ANGLE.qml"),
-        ("BUILDING-TOTAL-SETTLMENT", output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-SETTLMENT_sv_tot.qml"),
-        ("BUILDING-TOTAL-ANGLE", output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-ANGLE_max_angle.qml")
-        ]
-        # Add additional layers if bVulnerability is True
+        self.layers_info = {
+            "CORNERS-SETTLEMENT": {
+                "shape_path": output_shapefiles[2],
+                "style_path": f"{str(styles_dir_path)}/CORNERS-SETTLMENT_mm.qml",
+            },
+            "WALLS-ANGLE": {
+                "shape_path": output_shapefiles[1],
+                "style_path": f"{str(styles_dir_path)}/WALL-ANGLE.qml",
+            },
+            "BUILDING-TOTAL-SETTLMENT": {
+                "shape_path": output_shapefiles[0],
+                "style_path": f"{str(styles_dir_path)}/BUILDING-TOTAL-SETTLMENT_sv_tot.qml",
+            },
+            "BUILDING-TOTAL-ANGLE": {
+                "shape_path": output_shapefiles[0],
+                "style_path": f"{str(styles_dir_path)}/BUILDING-TOTAL-ANGLE_max_angle.qml",
+            }
+        }
         if bVulnerability:
-            self.layers_info.extend([
-                ("BUILDING-RISK-SETTLMENT", output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-RISK-SELLMENT_risk_tots.qml"),
-                ("BUILDING-RISK-ANGLE", output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-RISK-ANGLE_risk_angle.qml")
-            ])
+            self.layers_info.update(
+                {
+                    "BUILDING-RISK-SETTLMENT": {
+                        "shape_path": output_shapefiles[0],
+                        "style_path": f"{str(styles_dir_path)}/BUILDING-TOTAL-RISK-SELLMENT_risk_tots.qml",
+                    },
+                    "BUILDING-TOTAL-ANGLE": {
+                        "shape_path": output_shapefiles[0],
+                        "style_path": f"{str(styles_dir_path)}/BUILDING-TOTAL-RISK-ANGLE_risk_angle.qml",
+                    }
+                }
+            )
+            
+        # self.layers_info = [
+        # ("CORNERS-SETTLEMENT", output_shapefiles[2], f"{str(styles_dir_path)}/CORNERS-SETTLMENT_mm.qml"),
+        # ("WALLS-ANGLE", output_shapefiles[1], f"{str(styles_dir_path)}/WALL-ANGLE.qml"),
+        # ("BUILDING-TOTAL-SETTLMENT", output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-SETTLMENT_sv_tot.qml"),
+        # ("BUILDING-TOTAL-ANGLE", output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-ANGLE_max_angle.qml")
+        # ]
+        # # Add additional layers if bVulnerability is True
+        # if bVulnerability:
+        #     self.layers_info.extend([
+        #         ("BUILDING-RISK-SETTLMENT", output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-RISK-SELLMENT_risk_tots.qml"),
+        #         ("BUILDING-RISK-ANGLE", output_shapefiles[0], f"{str(styles_dir_path)}/BUILDING-TOTAL-RISK-ANGLE_risk_angle.qml")
+        #     ])
             
 # ######### EXPERIMENTAL ADD LAYERS TO GUI #########
 #         # Create the task
@@ -730,10 +762,9 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         }
     
     def postProcessAlgorithm(self, context, feedback):
-        # Assuming 'self.layers_info' is available and contains tuples of layer name, path, and style path
+
         # 'group_name' is the name of the group you want to add your layers to
         group_name = self.feature_name
-
         # Initialize a list to keep track of loaded layers for adding to a group
         loaded_layers = []
         
@@ -741,7 +772,9 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         root = project.layerTreeRoot()
 
         # Iterate through each layer's information in self.layers_info
-        for layer_name, layer_path, style_path in self.layers_info:
+        for layer_name, info in self.layers_info.items():
+            layer_path = info["shape_path"]
+            style_path = info["style_path"]
 
             if not Path(layer_path).is_file():
                 feedback.reportError(f"POSTPROCESS - Failed to find layer from path: {layer_path}")
@@ -755,20 +788,11 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
             layer = QgsVectorLayer(layer_path, modified_layer_name, "ogr")
             if not layer.isValid():
                 self.logger.error(f"POSTPROCESS - Failed to load layer: {layer_path}")
-                return False
-
-            # Keep track of the loaded layer
-            loaded_layers.append((layer, style_path))
-
-        # Add layers to the QGIS project
-        if not loaded_layers:
-            feedback.reportError("POSTPROCESS - failed to load layers. Try manually!")
-            return {}
+                continue
             
-        for layer, style_path in loaded_layers:
-            # Apply the style and trigger refresh of layer
-            layer.loadNamedStyle(style_path)
-            layer.triggerRepaint()
+            if Path(style_path).is_file():
+                layer.loadNamedStyle(style_path)
+                layer.triggerRepaint()
             
             if group_name:
                 group = root.findGroup(group_name)
