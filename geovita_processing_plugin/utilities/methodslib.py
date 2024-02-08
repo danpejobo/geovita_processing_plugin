@@ -277,7 +277,7 @@ def reproject_layers(output_crs: QgsCoordinateReferenceSystem,
         reprojected_vector_path = temp_folder / f"reprojected_{vector_layer.name()}.shp"
         processing.run("native:reprojectlayer", {
             'INPUT': vector_layer,
-            'TARGET_CRS': output_crs,
+            'TARGET_CRS': output_crs.authid(),
             'OUTPUT': str(reprojected_vector_path)
         }, context=context, feedback=feedback)
         
@@ -293,8 +293,8 @@ def reproject_layers(output_crs: QgsCoordinateReferenceSystem,
         reprojected_raster_path = temp_folder / f"reprojected_{raster_layer.name()}.tif"
         processing.run("gdal:warpreproject", {
             'INPUT': raster_layer,
-            'SOURCE_CRS': raster_layer.crs(),
-            'TARGET_CRS': output_crs,
+            'SOURCE_CRS': raster_layer.crs().authid(),
+            'TARGET_CRS': output_crs.authid(),
             'OUTPUT': str(reprojected_raster_path)
         }, context=context, feedback=feedback)
         
