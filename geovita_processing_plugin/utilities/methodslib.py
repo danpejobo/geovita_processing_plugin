@@ -268,6 +268,8 @@ def reproject_layers(keep_interm_layer: bool,
     
     # Check if the running version of QGIS is lower than the requirement, and create temp_folder based on that
     temp_folder = create_temp_folder_for_version(Qgis.QGIS_VERSION_INT, context)
+    if logger:
+        logger.info(f"@reproject_layers@ - Temp folder path: {str(temp_folder)}")    
     
     # Initialize reprojected layer variables
     reprojected_vector_layer = None
@@ -275,7 +277,7 @@ def reproject_layers(keep_interm_layer: bool,
 
     # Reproject vector layer
     if vector_layer is not None:
-        feedback.pushInfo(f"Vector layer to reproject: Valid: {vector_layer.isValid()}, Name: {vector_layer.name()}, Source: {vector_layer.source()}")
+        feedback.pushInfo(f"@reproject_layers@ - Vector layer to reproject: Valid: {vector_layer.isValid()}, Name: {vector_layer.name()}, Source: {vector_layer.source()}")
         reprojected_vector_path = temp_folder / f"reprojected_{vector_layer.name()}.shp"
         processing.run("native:reprojectlayer", {
             'INPUT': vector_layer,
@@ -290,10 +292,10 @@ def reproject_layers(keep_interm_layer: bool,
             
         reprojected_vector_layer = QgsVectorLayer(str(final_vector_path), f"reprojected_{vector_layer.name()}.shp", 'ogr')
         if not reprojected_vector_layer.isValid():
-            raise Exception(f"Failed to load reprojected vector layer from {final_vector_path}")
-        feedback.pushInfo(f"VECTOR layer reprojected and saved to {final_vector_path}, NEW CRS: {reprojected_vector_layer.crs().postgisSrid()}")
+            raise Exception(f"@reproject_layers@ - Failed to load reprojected vector layer from {final_vector_path}")
+        feedback.pushInfo(f"@reproject_layers@ - VECTOR layer reprojected and saved to {final_vector_path}, NEW CRS: {reprojected_vector_layer.crs().postgisSrid()}")
         if logger:
-            logger.info(f"VECTOR layer reprojected and saved to {final_vector_path}")
+            logger.info(f"@reproject_layers@ - VECTOR layer reprojected and saved to {final_vector_path}")
                   
     # Reproject raster layer if provided
     if raster_layer is not None:
@@ -312,10 +314,10 @@ def reproject_layers(keep_interm_layer: bool,
             move_file_components(reprojected_raster_path, final_raster_path)
         reprojected_raster_layer = QgsRasterLayer(str(final_raster_path), f"reprojected_{raster_layer.name()}.tif")
         if not reprojected_raster_layer.isValid():
-            raise Exception(f"Failed to load reprojected raster layer from {final_raster_path}")
-        feedback.pushInfo(f"RASTER layer reprojected and saved to {final_raster_path}, NEW CRS: {reprojected_raster_layer.crs().postgisSrid()}")
+            raise Exception(f"@reproject_layers@ - Failed to load reprojected raster layer from {final_raster_path}")
+        feedback.pushInfo(f"@reproject_layers@ - RASTER layer reprojected and saved to {final_raster_path}, NEW CRS: {reprojected_raster_layer.crs().postgisSrid()}")
         if logger:
-            logger.info(f"RASTER layer reprojected and saved to {final_raster_path}")       
+            logger.info(f"@reproject_layers@ - RASTER layer reprojected and saved to {final_raster_path}")       
 
     return reprojected_vector_layer, reprojected_raster_layer
 
@@ -365,7 +367,7 @@ def create_temp_folder_for_version(qgis_version_int : int, context: QgsProcessin
         temp_folder.mkdir(parents=True, exist_ok=True)
     else:
         # For older versions, or if no context is provided, use the global Processing temporary folder
-        temp_folder = Path(QgsProcessingUtils.tempFolder(context))
+        temp_folder = Path(QgsProcessingUtils.tempFolder())
         temp_folder.mkdir(parents=True, exist_ok=True)
         
     return temp_folder
