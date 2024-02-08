@@ -722,9 +722,9 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         
         feedback.setProgress(100)
         return {
-            self.OUTPUT_BUILDING: self.output_shapefiles[0],
-            self.OUTPUT_WALL: self.output_shapefiles[1],
-            self.OUTPUT_CORNER: self.output_shapefiles[2],
+            self.OUTPUT_BUILDING: output_shapefiles[0],
+            self.OUTPUT_WALL: output_shapefiles[1],
+            self.OUTPUT_CORNER: output_shapefiles[2],
         }
     
     def postProcessAlgorithm(self, context, feedback):
