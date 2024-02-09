@@ -6,7 +6,8 @@ from qgis.core import (QgsApplication,
                        QgsVectorLayer,
                        QgsCoordinateReferenceSystem,
                        QgsRasterLayer,
-                       QgsProcessingContext)
+                       QgsProcessingContext,
+                       QgsPointXY)
 
 import logging
 from pathlib import Path
@@ -73,6 +74,16 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
             'JANBU_COMP_MODULUS': 15,
             'CONSOLIDATION_TIME': 10,
         }
+        
+        # Define a dictionary of points to test with their expected raster values
+        # Format: {"point_name": (x, y, expected_value)}
+        self.test_points = {
+            "point1": (429883.5, 2323447.6, 0.106683),  # Example coordinates and expected value
+            "point2": (429896.7, 2323504.7, 0.0896728),
+            "point3": (429865.0, 2323425.2, 0.111367),
+            "point4": (429864.0, 2323457.4, 0.0725033),
+            "point5": (429845.5, 2323466.2, 0.0308721),
+        }
     
     def test_algorithm_loaded(self):
         # This flag will help us determine if any relevant algorithms were found
@@ -87,7 +98,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         # Assert that at least one relevant algorithm was found
         self.assertTrue(found_relevant_algorithms, "No algorithms under 'geovita' were found.")
 
-    def test_algorithm_execution(self):
+    def test_algorithm_execution_all(self):
         """Test executing the BegrensSkadeExcavation algorithm with a basic set of parameters."""
 
         feedback = QgsProcessingFeedback()
@@ -99,6 +110,53 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         self.assertTrue(Path(results['OUTPUT_FOLDER']).exists())
 
         # Further checks can include verifying the contents of the output shapefiles
+        # Load the raster and perform additional checks
+        output_raster = QgsRasterLayer(results['OUTPUT_FOLDER'], "Output Raster")
+        self.assertTrue(output_raster.isValid(), "Output raster layer is not valid.")
+    
+    def test_algorithm_exec_long(self):
+        """Test executing the BegrensSkadeExcavation algorithm with only long term parameters"""
+        feedback = QgsProcessingFeedback()
+        context = QgsProcessingContext()
+        params_long = self.params.copy()
+        params_long['SHORT_TERM_SETTLEMENT'] = False
+        results = processing.run(
+            "geovita:begrensskadeexcavation",
+            params_long,
+            feedback=feedback,
+            context=context,
+        )
+
+        # Verify results
+        # For example, check if output shapefiles exist
+        self.assertTrue(Path(results['OUTPUT_FOLDER']).exists())
+
+        # Further checks can include verifying the contents of the output shapefiles
+    
+    def test_output_raster_values_at_points(self):
+        """
+        Test sampling raster values at specific points and compare with expected values.
+        """
+        feedback = QgsProcessingFeedback()
+        context = QgsProcessingContext()
+        results = processing.run(
+            "geovita:begrensskadeexcavation",
+            self.params,
+            feedback=feedback,
+            context=context,
+        )
+
+        # Load the output layer for verification
+        output_layer = QgsRasterLayer(
+            results["OUTPUT_FOLDER"], "Output Corners"
+        )
+        
+        for point_name, (x, y, expected_value) in self.test_points.items():
+            point = QgsPointXY(x, y)
+            value, result = output_layer.dataProvider().sample(point, 1)  # Assuming band 1
+
+            self.assertTrue(result, f"Failed to sample raster at {point_name}")
+            self.assertAlmostEqual(value, expected_value, places=5, msg=f"Raster value at {point_name} does not match expected value")
 
 
 
