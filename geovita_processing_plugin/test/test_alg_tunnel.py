@@ -77,7 +77,7 @@ class TestBegrensSkadeTunnel(unittest.TestCase):
             "TUNNEL_DIAM": 9.5,
             "VOLUME_LOSS": 2,
             "TROUGH_WIDTH": 0.5,
-            "LONG_TERM_SETTLEMENT": False,
+            "LONG_TERM_SETTLEMENT": True,
             "RASTER_ROCK_SURFACE": self.raster_rock_surface_layer,
             "POREPRESSURE_ENUM": 1,  # index
             "TUNNEL_LEAKAGE": 10,
@@ -165,7 +165,6 @@ class TestBegrensSkadeTunnel(unittest.TestCase):
             feedback=feedback,
             context=context,
         )
-
         # Verify results
         # For example, check if output shapefiles exist
         self.assertTrue(Path(results["OUTPUT_BUILDING"]).exists())
