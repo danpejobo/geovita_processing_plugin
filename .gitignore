@@ -158,4 +158,4 @@ zip_build/
 .vscode/
 
 #Ruff
-.ruff.toml
+.ruff*

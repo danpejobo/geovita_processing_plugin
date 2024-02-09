@@ -877,6 +877,24 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         }
 
     def postProcessAlgorithm(self, context, feedback):
+        """
+        Handles the post-processing steps of the algorithm, specifically adding output layers to the QGIS project.
+
+        This method creates and executes a process to add layers to the QGIS interface, applying predefined styles 
+        and organizing them within a specified group. It leverages the `AddLayersTask` class to manage layer 
+        addition in a way that ensures thread safety and proper GUI updates.
+
+        Parameters:
+        - context (QgsProcessingContext): The context of the processing, providing access to the QGIS project and other relevant settings.
+        - feedback (QgsProcessingFeedback): The object used to report progress and log messages back to the user.
+
+        Returns:
+        - dict: An empty dictionary. This method does not produce output parameters but instead focuses on the side effect of adding layers to the project.
+
+        Note:
+        This method sets up a task for layer addition, defining success and failure callbacks to provide user feedback. 
+        It manually starts the process and handles its completion.
+        """
         ######### EXPERIMENTAL ADD LAYERS TO GUI #########
         # Create the task
         self.add_layers_task.setParameters(
