@@ -47,14 +47,6 @@ class AddLayersTask(QgsTask):
         self.logger = None
         self.prepared_layers = []  # Initialize prepared layers list
         self.completed = False
-        
-    def setParameters(self, layers_info, group_name, styles_dir_path, logger):
-        self.layers_info = layers_info
-        self.group_name = group_name
-        self.style_dir_path = style_dir_path
-        self.logger = logger
-        self.prepared_layers = []  # Initialize prepared layers list
-        self.completed = False
     
     def setParameters(self, layers_info, group_name, style_dir_path, logger):
         self.layers_info = layers_info
