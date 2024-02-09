@@ -35,20 +35,14 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         self.output_data_dir.mkdir(parents=True, exist_ok=True)
         
         # Construct paths to your test datasets within the data directory
-        self.building_layer_path = self.data_dir / 'bygninger.shp'
         self.excavation_layer_path = self.data_dir / 'byggegrop.shp'
         self.raster_rock_surface_path = self.data_dir / 'DTB-dummy-25833-clip.tif'
-        self.assertTrue(self.building_layer_path.is_file(), "Building shape source file does not exist.")
-        self.assertTrue(self.excavation_layer_path.is_file(), "Excavation shape surface source file does not exist.")
-        self.assertTrue(self.raster_rock_surface_path.is_file(), "Raster rock surface source file does not exist.")
 
         # Assuming these layers exist for testing purposes
-        self.building_layer = QgsVectorLayer(str(self.building_layer_path), 'test_building', 'ogr')
-        self.excavation_layer = QgsVectorLayer(str(self.excavation_layer_path), 'test_excavation', 'ogr')
-        self.raster_rock_surface_layer = QgsRasterLayer(str(self.raster_rock_surface_path), 'test_raster_rock_surface')
+        self.excavation_layer = QgsVectorLayer(str(self.excavation_layer_path), 'test_byggegrop', 'ogr')
+        self.raster_rock_surface_layer = QgsRasterLayer(str(self.raster_rock_surface_path), 'test_DTB-dummy-25833-clip')
 
         # Ensure layers are valid
-        self.assertTrue(self.building_layer.isValid(), "Building layer failed to load.")
         self.assertTrue(self.excavation_layer.isValid(), "Excavation layer failed to load.")
         self.assertTrue(self.raster_rock_surface_layer.isValid(), "Raster rock surface layer failed to load.")
         
@@ -58,15 +52,16 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         
         # # Set parameters
         self.params = {
-            'INPUT_BUILDING_POLY': self.building_layer,
             'INPUT_EXCAVATION_POLY': self.excavation_layer,
+            'RASTER_ROCK_SURFACE': self.raster_rock_surface_layer,
             'OUTPUT_FOLDER': str(self.output_data_dir),
+            'OUTPUT_FEATURE_NAME': 'test_output-impactmap-all',
             'OUTPUT_CRS': self.out_crs,
+            'OUTPUT_RESOLUTION': 10,
             'SHORT_TERM_SETTLEMENT': True,
             'EXCAVATION_DEPTH': 10.0,
             'SETTLEMENT_ENUM': 1, #index
-            'LONG_TERM_SETTLEMENT': True,
-            'RASTER_ROCK_SURFACE': self.raster_rock_surface_layer,
+            'CLIPPING_RANGE': 150,
             'POREPRESSURE_ENUM': 1, #index
             'POREPRESSURE_REDUCTION': 50,
             'DRY_CRUST_THICKNESS': 5.0,
@@ -77,12 +72,6 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
             'JANBU_CONSTANT': 4,
             'JANBU_COMP_MODULUS': 15,
             'CONSOLIDATION_TIME': 10,
-            'VULNERABILITY_ANALYSIS': True,
-            'FILED_NAME_BUILDING_FOUNDATION': 'Foundation',  # Field name
-            'FILED_NAME_BUILDING_STRUCTURE': 'Structure',  # Field name
-            'FILED_NAME_BUILDING_STATUS': 'Condition',  # Field name
-            'INTERMEDIATE_LAYERS': False,
-            'OUTPUT_FEATURE_NAME': 'test_output-exca-all'
         }
     
     def test_algorithm_loaded(self):
@@ -103,13 +92,11 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
 
         feedback = QgsProcessingFeedback()
         context = QgsProcessingContext()
-        results = processing.run("geovita:begrensskadeexcavation", self.params, feedback=feedback, context=context)
+        results = processing.run("geovita:begrensskadeimpactmap", self.params, feedback=feedback, context=context)
 
         # Verify results
         # For example, check if output shapefiles exist
-        self.assertTrue(Path(results['OUTPUT_BUILDING']).exists())
-        self.assertTrue(Path(results['OUTPUT_WALL']).exists())
-        self.assertTrue(Path(results['OUTPUT_CORNER']).exists())
+        self.assertTrue(Path(results['OUTPUT_FOLDER']).exists())
 
         # Further checks can include verifying the contents of the output shapefiles
 

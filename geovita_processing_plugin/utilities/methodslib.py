@@ -22,7 +22,8 @@ from qgis.core import (Qgis,
                        QgsProcessingContext,
                        QgsProcessingFeedback,
                        QgsCoordinateReferenceSystem,
-                       QgsRectangle)
+                       QgsRectangle,
+                       QgsProcessingException)
 
 from qgis import processing
 from pathlib import Path
@@ -120,13 +121,13 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipp
             'OPTIONS': '',
             'DATA_TYPE': 0,  # Use 5 for Float32
             'OUTPUT': str(dtb_clip_raster_path)
-        })
+        }, is_child_algorithm=True, context=context, feedback=feedback)
         dtb_raster_layer = QgsRasterLayer(str(dtb_clip_raster_path), "clip_temp-raster")
         if dtb_raster_layer.crs().isValid():
             logger.debug(f"@process_raster_for_impactmap@ - CRS Description: {dtb_raster_layer.crs().description()}")
             logger.debug(f"@process_raster_for_impactmap@ - CRS text: {dtb_raster_layer.crs().toProj()}")
         else:
-            logger.debug(f"@process_raster_for_impactmap@ - INVALID CRS AFTER CLIP")
+            logger.debug("@process_raster_for_impactmap@ - INVALID CRS AFTER CLIP")
         
         logger.debug("@process_raster_for_impactmap@ - DONE raster clipping")
         feedback.pushInfo("@process_raster_for_impactmap@ --> Done clipping")
@@ -150,13 +151,13 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipp
             'RESAMPLING': 0,  # 0 for Nearest Neighbour
             'TARGET_RESOLUTION': output_resolution,
             'OUTPUT': str(dtb_raster_resample_path)
-        })
+        }, is_child_algorithm=True, context=context, feedback=feedback)
         dtb_raster_layer = QgsRasterLayer(str(dtb_raster_resample_path), "resampl_temp-raster")
         if dtb_raster_layer.crs().isValid():
             logger.debug(f"@process_raster_for_impactmap@ - CRS Description: {dtb_raster_layer.crs().description()}")
             logger.debug(f"@process_raster_for_impactmap@ - CRS text: {dtb_raster_layer.crs().toProj()}")
         else:
-            logger.debug(f"@process_raster_for_impactmap@ - INVALID CRS AFTER RESAMPLE")
+            logger.debug("@process_raster_for_impactmap@ - INVALID CRS AFTER RESAMPLE")
         logger.debug("@process_raster_for_impactmap@ DONE raster resampling")
         feedback.pushInfo("@process_raster_for_impactmap@ --> Done resampling")
     
@@ -239,9 +240,7 @@ def reproject_is_needed(layer: Union[QgsVectorLayer, QgsRasterLayer],
     else:
         return False
     
-def reproject_layers(keep_interm_layer: bool,
-                     output_crs: QgsCoordinateReferenceSystem, 
-                     output_folder: Path, 
+def reproject_layers(output_crs: QgsCoordinateReferenceSystem, 
                      vector_layer: QgsVectorLayer = None,
                      raster_layer: QgsRasterLayer = None, 
                      context: QgsProcessingContext = None, 
@@ -250,16 +249,14 @@ def reproject_layers(keep_interm_layer: bool,
     Reprojects vector and optionally raster layers to a specified CRS.
 
     Args:
-    - keep_interm_layer (bool): Save the reprojected layers in the output directory
     - output_crs (QgsCoordinateReferenceSystem): The desired output CRS.
-    - output_folder (Path): The folder path where the reprojected layers will be saved.
     - vector_layer (QgsVectorLayer, optional): The vector layer to be reprojected, or None if not applicable.
     - raster_layer (QgsRasterLayer, optional): The raster layer to be reprojected, or None if not applicable.
     - context (QgsProcessingContext, optional): The context for processing. Default is None.
     - logger (logging.Logger, optional): Logger for logging messages. Default is None.
 
     Returns:
-    - Tuple: (reprojected_vector_path, reprojected_raster_path) Paths to the reprojected layers.
+    - Tuple: (reprojected_vector_layer, reprojected_raster_layer) Paths to the reprojected layers.
     """
     # Prepare processing context and feedback
     if not context:
@@ -277,52 +274,47 @@ def reproject_layers(keep_interm_layer: bool,
 
     # Reproject vector layer
     if vector_layer is not None:
-        feedback.pushInfo(f"@reproject_layers@ - Vector layer to reproject: Valid: {vector_layer.isValid()}, Name: {vector_layer.name()}, Source: {vector_layer.source()}")
+        feedback.pushInfo(f"@reproject_layers@ - Vector layer to reproject: Name: {vector_layer.name()}, Source: {vector_layer.source()}")
         reprojected_vector_path = temp_folder / f"reprojected_{vector_layer.name()}.shp"
-        processing.run("native:reprojectlayer", {
-            'INPUT': vector_layer,
-            'TARGET_CRS': output_crs,
-            'OUTPUT': str(reprojected_vector_path)
-        }, context=context, feedback=feedback)
-        
-        # Determine the final path based on the keep_interm_layer flag
-        final_vector_path = output_folder / f"reprojected_{vector_layer.name()}.shp" if keep_interm_layer else reprojected_vector_path
-        if keep_interm_layer:
-            move_file_components(reprojected_vector_path, final_vector_path)
-            
-        reprojected_vector_layer = QgsVectorLayer(str(final_vector_path), f"reprojected_{vector_layer.name()}.shp", 'ogr')
-        if not reprojected_vector_layer.isValid():
-            raise Exception(f"@reproject_layers@ - Failed to load reprojected vector layer from {final_vector_path}")
-        feedback.pushInfo(f"@reproject_layers@ - VECTOR layer reprojected and saved to {final_vector_path}, NEW CRS: {reprojected_vector_layer.crs().postgisSrid()}")
         if logger:
-            logger.info(f"@reproject_layers@ - VECTOR layer reprojected and saved to {final_vector_path}")
+            logger.info(f"Attempting to reproject to: {reprojected_vector_path}")  # Log the output path
+
+        try:
+            processing.run("native:reprojectlayer", {
+                'INPUT': vector_layer,
+                'TARGET_CRS': output_crs.authid(),
+                'OUTPUT': str(reprojected_vector_path)
+            }, is_child_algorithm=True, context=context, feedback=feedback)
+        except Exception as e:
+            raise QgsProcessingException(f"@reproject_layers@ - Error during vector reprojection: {str(e)}")
+        
+        reprojected_vector_layer = QgsVectorLayer(str(reprojected_vector_path), f"reprojected_{vector_layer.name()}.shp", 'ogr')
+        if not reprojected_vector_layer.isValid():
+            raise Exception(f"@reproject_layers@ - Failed to load reprojected vector layer from {reprojected_vector_layer}")
+        if logger:
+            logger.info(f"@reproject_layers@ - VECTOR layer reprojected to CRS: {reprojected_vector_layer.crs().postgisSrid()}")
                   
     # Reproject raster layer if provided
     if raster_layer is not None:
-        feedback.pushInfo(f"Raster layer to reproject: Valid: {raster_layer.isValid()}, Name: {raster_layer.name()}.tif, Source: {raster_layer.source()}")
+        feedback.pushInfo(f"Raster layer to reproject: Name: {raster_layer.name()}.tif, Source: {raster_layer.source()}")
         reprojected_raster_path = temp_folder / f"reprojected_{raster_layer.name()}.tif"
         if logger:
-            logger.info(f"@reproject_layers@ - Raster to reproject 'INPUT': {raster_layer.source()}")
-            logger.info(f"@reproject_layers@ - Raster to reproject 'SOURCE_CRS': {raster_layer.crs()}")
-            logger.info(f"@reproject_layers@ - Raster to reproject 'TARGET_CRS': {output_crs}")
-        processing.run("gdal:warpreproject", {
-            'INPUT': raster_layer.source(),
-            'SOURCE_CRS': raster_layer.crs(),
-            'TARGET_CRS': output_crs,
-            'OUTPUT': str(reprojected_raster_path)
-        }, context=context, feedback=feedback)
-        if logger:
-            logger.info(f"@reproject_layers@ - Raster to reproject 'OUTPUT': {str(reprojected_raster_path)}")
-        # Save the reprojected raster layer to the output folder, else return the temporary interm. layer
-        final_raster_path = output_folder / f"reprojected_{raster_layer.name()}.tif" if keep_interm_layer else reprojected_raster_path
-        if keep_interm_layer:
-            move_file_components(reprojected_raster_path, final_raster_path)
-        reprojected_raster_layer = QgsRasterLayer(str(final_raster_path), f"reprojected_{raster_layer.name()}.tif")
+            logger.info(f"Attempting to reproject to: {reprojected_raster_path}")  # Log the output path
+        try:
+            processing.run("gdal:warpreproject", {
+                'INPUT': raster_layer.source(),
+                'SOURCE_CRS': raster_layer.crs(),
+                'TARGET_CRS': output_crs,
+                'OUTPUT': str(reprojected_raster_path)
+            }, is_child_algorithm=True, context=context, feedback=feedback)
+        except Exception as e:
+            raise QgsProcessingException(f"@reproject_layers@ - Error during raster reprojection: {str(e)}")
+        
+        reprojected_raster_layer = QgsRasterLayer(str(reprojected_raster_path), f"reprojected_{raster_layer.name()}.tif")
         if not reprojected_raster_layer.isValid():
-            raise Exception(f"@reproject_layers@ - Failed to load reprojected raster layer from {final_raster_path}")
-        feedback.pushInfo(f"@reproject_layers@ - RASTER layer reprojected and saved to {final_raster_path}, NEW CRS: {reprojected_raster_layer.crs().postgisSrid()}")
+            raise Exception(f"@reproject_layers@ - Failed to load reprojected raster layer from {reprojected_raster_path}")
         if logger:
-            logger.info(f"@reproject_layers@ - RASTER layer reprojected and saved to {final_raster_path}")       
+            logger.info(f"@reproject_layers@ - RASTER layer reprojected to CRS: {reprojected_raster_layer.crs().postgisSrid()}")       
 
     return reprojected_vector_layer, reprojected_raster_layer
 
@@ -372,7 +364,8 @@ def create_temp_folder_for_version(qgis_version_int : int, context: QgsProcessin
         temp_folder.mkdir(parents=True, exist_ok=True)
     else:
         # For older versions, or if no context is provided, use the global Processing temporary folder
-        temp_folder = Path(QgsProcessingUtils.tempFolder())
+        temp_folder = QgsProcessingUtils.tempFolder()
+        temp_folder = Path(temp_folder)
         temp_folder.mkdir(parents=True, exist_ok=True)
         
     return temp_folder

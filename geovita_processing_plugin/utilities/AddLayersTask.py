@@ -29,15 +29,15 @@ class AddLayersTask(QgsTask):
 
     taskCompleted = pyqtSignal(bool)
 
-    def __init__(self) -> None:
+    def __init__(self, description: str = "Add Layers", layers_info: dict = {}, group_name: str = None, style_dir_path: Path = None, logger: logger.CustomLogger = None) -> None:
         """
         Initializes the AddLayersTask.
 
         Args:
             description (str): The description of the task.
-            layers_info (list): A list of tuples containing layer information (name, path, style).
+            layers_info (dict): A dict containing layer information where the layer name is the key (Key: name, {path, style}).
             group_name (str): The name of the group to which layers are related.
-            styles_dir_path (Path): The directory path where style files are located.
+            style_dir_path (Path): Path to styles directory
             logger (Logger): Logger for logging messages.
         """
         super().__init__("Add Layers Task", QgsTask.CanCancel)
@@ -47,11 +47,11 @@ class AddLayersTask(QgsTask):
         self.logger = None
         self.prepared_layers = []  # Initialize prepared layers list
         self.completed = False
-        
-    def setParameters(self, layers_info, group_name, styles_dir_path, logger):
+    
+    def setParameters(self, layers_info, group_name, style_dir_path, logger):
         self.layers_info = layers_info
         self.group_name = group_name
-        self.styles_dir_path = styles_dir_path
+        self.style_dir_path = style_dir_path
         self.logger = logger
 
     def run(self) -> bool:
@@ -62,10 +62,12 @@ class AddLayersTask(QgsTask):
         Returns:
             bool: True if preparation is successful, False otherwise.
         """
-        for layer_name, layer_path, style_name in self.layers_info:
+        for layer_name, info in self.layers_info.items():
+            layer_path = info["shape_path"]
+            style_name = info["style_name"]
             # Validate file paths
             if not Path(layer_path).is_file():
-                self.logger.error(f"@AddLayersTask-run()@ - File not found: {layer_path}")
+                self.logger.error(f"@AddLayersTask-run()@ - Layer file not found: {layer_path}")
                 return False
             
             # Generate a timestamp string
@@ -101,8 +103,10 @@ class AddLayersTask(QgsTask):
         if success:
             # GUI operations are performed here
             for layer, style_name in self.prepared_layers:
-                style_path = str(self.styles_dir_path / style_name)
-                if not self.add_layer_to_qgis(layer, style_path, self.group_name, self.logger):
+                style_path = self.style_dir_path / style_name
+                if not style_path.is_file():
+                    self.logger.error(f"@AddLayersTask-run()@ - File not found: {style_path}")
+                if not self.add_layer_to_qgis(layer, str(style_path), self.group_name, self.logger):
                     self.logger.error(f"Failed to add layer {layer.name()}")
                     self.taskCompleted.emit(False)
                     return
