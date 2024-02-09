@@ -146,7 +146,7 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipp
         
         processing.run("gdal:warpreproject", {
             'INPUT': dtb_raster_layer.source(),
-            'SOURCE_CRS': dtb_raster_layer.crs(),
+            'SOURCE_CRS': dtb_raster_layer.crs().authid(),
             'TARGET_CRS': output_crs.authid(),
             'RESAMPLING': 0,  # 0 for Nearest Neighbour
             'TARGET_RESOLUTION': output_resolution,
@@ -303,8 +303,8 @@ def reproject_layers(output_crs: QgsCoordinateReferenceSystem,
         try:
             processing.run("gdal:warpreproject", {
                 'INPUT': raster_layer.source(),
-                'SOURCE_CRS': raster_layer.crs(),
-                'TARGET_CRS': output_crs,
+                'SOURCE_CRS': raster_layer.crs().authid(),
+                'TARGET_CRS': output_crs.authid(),
                 'OUTPUT': str(reprojected_raster_path)
             }, is_child_algorithm=True, context=context, feedback=feedback)
         except Exception as e:
