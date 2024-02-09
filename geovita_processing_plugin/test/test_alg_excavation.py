@@ -38,6 +38,9 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         self.building_layer_path = self.data_dir / 'bygninger.shp'
         self.excavation_layer_path = self.data_dir / 'byggegrop.shp'
         self.raster_rock_surface_path = self.data_dir / 'DTB-dummy-25833-clip.tif'
+        self.assertTrue(self.building_layer_path.is_file(), "Building shape source file does not exist.")
+        self.assertTrue(self.excavation_layer_path.is_file(), "Excavation shape surface source file does not exist.")
+        self.assertTrue(self.raster_rock_surface_path.is_file(), "Raster rock surface source file does not exist.")
 
         # Assuming these layers exist for testing purposes
         self.building_layer = QgsVectorLayer(str(self.building_layer_path), 'test_bygninger', 'ogr')

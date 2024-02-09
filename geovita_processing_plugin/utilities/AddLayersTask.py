@@ -40,7 +40,15 @@ class AddLayersTask(QgsTask):
             style_dir_path (Path): Path to styles directory
             logger (Logger): Logger for logging messages.
         """
-        super().__init__(description, QgsTask.CanCancel)
+        super().__init__("Add Layers Task", QgsTask.CanCancel)
+        self.layers_info = []
+        self.group_name = ""
+        self.styles_dir_path = None
+        self.logger = None
+        self.prepared_layers = []  # Initialize prepared layers list
+        self.completed = False
+        
+    def setParameters(self, layers_info, group_name, styles_dir_path, logger):
         self.layers_info = layers_info
         self.group_name = group_name
         self.style_dir_path = style_dir_path
