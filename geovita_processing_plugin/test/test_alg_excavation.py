@@ -1,3 +1,32 @@
+# -*- coding: utf-8 -*-
+
+"""
+/***************************************************************************
+ GeovitaProcessingPlugin - Tests
+                              -------------------
+        begin                : 2024-02-09
+        copyright            : (C) 2024 by DPE
+        email                : dpe@geovita.no
+ ***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+"""
+
+__author__ = "DPE"
+__date__ = "2024.02.09"
+__copyright__ = "(C) 2024 by DPE"
+
+# This will get replaced with a git SHA1 when you do a git archive
+
+__revision__ = "$Format:%H$"
+
 from qgis import processing
 
 # import processing
