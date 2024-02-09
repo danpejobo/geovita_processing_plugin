@@ -622,7 +622,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
 
             # Get the file path of the raster layer
             path_source_raster_rock_surface = (
-                source_raster_rock_surface.source().lower().split("|")[0]
+                source_raster_rock_surface.source().split("|")[0]
             )
             self.logger.info(
                 f"PROCESS - Rock raster DTM File path: {path_source_raster_rock_surface}"

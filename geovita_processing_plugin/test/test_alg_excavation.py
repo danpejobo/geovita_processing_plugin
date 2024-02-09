@@ -125,7 +125,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         )
 
     def test_algorithm_exec_all(self):
-        """Test executing the BegrensSkadeExcavation algorithm with a basic set of parameters."""
+        """Test executing the BegrensSkadeExcavation algorithm with the default set of all parameters."""
 
         feedback = QgsProcessingFeedback()
         context = QgsProcessingContext()
@@ -145,6 +145,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         # Further checks can include verifying the contents of the output shapefiles
 
     def test_algorithm_exec_short(self):
+        """Test executing the BegrensSkadeExcavation algorithm with short term parameters"""
         feedback = QgsProcessingFeedback()
         context = QgsProcessingContext()
         params_short = self.params.copy()
@@ -165,6 +166,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         # Further checks can include verifying the contents of the output shapefiles
 
     def test_algorithm_exec_long(self):
+        """Test executing the BegrensSkadeExcavation algorithm with long term parameters"""
         feedback = QgsProcessingFeedback()
         context = QgsProcessingContext()
         params_long = self.params.copy()
