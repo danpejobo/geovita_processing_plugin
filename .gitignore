@@ -156,3 +156,6 @@ zip_build/
 
 #VSCode stuff
 .vscode/
+
+#Ruff
+.ruff*

@@ -1,0 +1,78 @@
+# This file contains metadata for your plugin.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=Geovita GIS Processing provider
+qgisMinimumVersion=3.28
+qgisMaximumVersion=3.99
+description=This plugin adds different Geovita custom processing algorithms to QGIS
+version=3.0.0
+author=DPE
+email=dpe@geovita.no
+
+about=Geovita plugin provider. This plugin enables different processing algorithms and is under development.
+
+	Now it implements NGI's REMEDY_GIS_RiskTool to QGIS:
+	* Begrens Skade - Excavation: The Begrens Skade - Excavation algorithm provides a comprehensive analysis of building settlements and risks associated with subsidence and inclination.
+	* Begrens Skade - ImpactMap: The BegrensSkade ImpactMap alorithm calculates both short-term and long-term settlements that occur due to the establishment of a construction pit (this alg. takes a bit of time to run, open the log and refresh it to see the logged progress).
+	* Begrens Skade - Tunnel: The BegrensSkade Tunnel alorithm provides a comprehensive analysis of building settlements and risks associated with subsidence and inclination due to tunnel excavation.
+
+	- File bug-reports here: https://github.com/danpejobo/geovita_processing_plugin/issues
+
+tracker=https://github.com/danpejobo/geovita_processing_plugin/issues
+repository=https://github.com/danpejobo/geovita_processing_plugin
+# End of mandatory metadata
+
+# Recommended items:
+
+hasProcessingProvider=yes
+# Uncomment the following line and add your changelog:
+changelog=v.3.0.0 (09.02.2024)
+	- Restructure codebase
+	- Implement postprocessing to add layers (was still some threading issues)
+	- Add tests to try and mitigate the risk of publishing a broken plugin
+	- fix path issue in impactmap (no raster or invalid path)
+	- fix error in how coordinate system for impactmap is set in the main REMEDY repo
+
+	v.2.0.2 (01.02.2024)
+	- Fix unbound local reference to DTB-raster
+	- Fix bug with checking version. Undefined variable if version < 33200
+
+	v.2.0.0 (29.01.2024)
+	- Add reproject functionality
+	- Fix: Access violation error due to maipulating GUI from process thread
+	- Fix: Group/layers in TOC updates correctly
+	- Fixed impact map clip distance
+	- Fixed impact map resample
+	- Minor bugs in all modules
+	
+	v.1.0.2 (24.01.2024)
+	- Update a bug in the utility function get_shapefile_as_json_pyqgis, where excavations containing Z/M-dimentions (they are dropped) did not process correctly, resulting in an bug in the underlying submodule.
+
+	v.1.0.1 (17.01.2024)
+	- Initial "release" of the QGIS implementation of NGI's REMEDY_GIS_RiskTool
+
+# Tags are comma separated with spaces allowed
+tags=analysis, attribute edit, csv, database, delimitation, digitizing, export, import, point, processing, table, vector, NGI, BegrensSkade, remedy, building, settlements, tunnel, impactmap, excavation, risk, dtm
+
+homepage=https://github.com/danpejobo/geovita_processing_plugin
+category=Analysis
+icon=icons/geovita.ico
+# experimental flag
+experimental=False
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
+# Since QGIS 3.8, a comma separated list of plugins to be installed
+# (or upgraded) can be specified.
+# Check the documentation for more information.
+# plugin_dependencies=
+
+Category of the plugin: Raster, Vector, Database or Web
+# category=
+
+# If the plugin can run on QGIS Server.
+server=False
+
