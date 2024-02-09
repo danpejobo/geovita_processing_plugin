@@ -29,24 +29,27 @@ class AddLayersTask(QgsTask):
 
     taskCompleted = pyqtSignal(bool)
 
-    def __init__(self, description: str, layers_info: list[tuple[str, str, str]], group_name: str, styles_dir_path: Path, logger: logger.CustomLogger) -> None:
+    def __init__(self, description: str = "Add Layers", layers_info: dict = {}, group_name: str = None, logger: logger.CustomLogger = None) -> None:
         """
         Initializes the AddLayersTask.
 
         Args:
             description (str): The description of the task.
-            layers_info (list): A list of tuples containing layer information (name, path, style).
+            layers_info (dict): A dict containing layer information (name, path, style).
             group_name (str): The name of the group to which layers are related.
-            styles_dir_path (Path): The directory path where style files are located.
             logger (Logger): Logger for logging messages.
         """
         super().__init__(description, QgsTask.CanCancel)
         self.layers_info = layers_info
         self.group_name = group_name
-        self.styles_dir_path = styles_dir_path
         self.logger = logger
         self.prepared_layers = []  # Initialize prepared layers list
         self.completed = False
+    
+    def setParameters(self, layers_info, group_name, logger):
+        self.layers_info = layers_info
+        self.group_name = group_name
+        self.logger = logger
 
     def run(self) -> bool:
         """
@@ -56,7 +59,9 @@ class AddLayersTask(QgsTask):
         Returns:
             bool: True if preparation is successful, False otherwise.
         """
-        for layer_name, layer_path, style_name in self.layers_info:
+        for layer_name, info in self.layers_info.items():
+            layer_path = info["shape_path"]
+            style_path = info["style_path"]
             # Validate file paths
             if not Path(layer_path).is_file():
                 self.logger.error(f"@AddLayersTask-run()@ - File not found: {layer_path}")
@@ -80,7 +85,7 @@ class AddLayersTask(QgsTask):
                 return False
 
             # Store the prepared layer along with its style name
-            self.prepared_layers.append((layer, style_name))
+            self.prepared_layers.append((layer, style_path))
             self.logger.info(f"@AddLayersTask-run()@ - Layer prepared for addition: {modified_layer_name}")
         return True
 
@@ -94,8 +99,7 @@ class AddLayersTask(QgsTask):
         """
         if success:
             # GUI operations are performed here
-            for layer, style_name in self.prepared_layers:
-                style_path = str(self.styles_dir_path / style_name)
+            for layer, style_path in self.prepared_layers:
                 if not self.add_layer_to_qgis(layer, style_path, self.group_name, self.logger):
                     self.logger.error(f"Failed to add layer {layer.name()}")
                     self.taskCompleted.emit(False)

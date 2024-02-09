@@ -32,6 +32,7 @@ __revision__ = '$Format:%H$'
 
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (Qgis,
+                       QgsApplication,
                        QgsProject,
                        QgsProcessing,
                        QgsProcessingParameterDefinition,
@@ -106,6 +107,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         
         self.feature_name = None  # Default value
         self.layers_info = {}
+        self.add_layers_task = AddLayersTask()
         
     # Constants used to refer to parameters and outputs. They will be
     # used when calling the algorithm from another algorithm, or when
@@ -762,56 +764,73 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         }
     
     def postProcessAlgorithm(self, context, feedback):
-
-        # 'group_name' is the name of the group you want to add your layers to
-        group_name = self.feature_name
-        # Initialize a list to keep track of loaded layers for adding to a group
-        loaded_layers = []
-        
-        project = context.project() if context.project() else QgsProject.instance()
-        root = project.layerTreeRoot()
-
-        # Iterate through each layer's information in self.layers_info
-        for layer_name, info in self.layers_info.items():
-            layer_path = info["shape_path"]
-            style_path = info["style_path"]
-
-            if not Path(layer_path).is_file():
-                feedback.reportError(f"POSTPROCESS - Failed to find layer from path: {layer_path}")
-                continue  # Skip to the next layer if this one fails to load
-            
-            # Generate a timestamp string
-            timestamp = datetime.now().strftime("_%Y%m%d_%H:%M")
-            modified_layer_name = f"{layer_name}{timestamp}"
-
-            # Load the layer
-            layer = QgsVectorLayer(layer_path, modified_layer_name, "ogr")
-            if not layer.isValid():
-                self.logger.error(f"POSTPROCESS - Failed to load layer: {layer_path}")
-                continue
-            
-            if Path(style_path).is_file():
-                layer.loadNamedStyle(style_path)
-                layer.triggerRepaint()
-            
-            if group_name:
-                group = root.findGroup(group_name)
-                if not group:
-                    group = QgsLayerTreeGroup(group_name)
-                    root.insertChildNode(0, group)
-                    self.logger.debug(f"POSTPROCESS - Created new group '{group_name}' and added it to the top of the Layer Tree.")
-                    feedback.pushInfo(f"POSTPROCESS - Created new group '{group_name}' and added it to the top of the Layer Tree.")
-                project.addMapLayer(layer, False)
-                node_layer = QgsLayerTreeLayer(layer)
-                node_layer.setItemVisibilityChecked(True)
-                group.addChildNode(node_layer)
-                self.logger.debug(f"POSTPROCESS - Added layer '{layer.name()}' to group '{group_name}'.")
-                feedback.pushInfo(f"POSTPROCESS - Added layer '{layer.name()}' to group '{group_name}'.")
+         
+######### EXPERIMENTAL ADD LAYERS TO GUI #########
+        # Create the task
+        self.add_layers_task.setParameters(self.layers_info, self.feature_name, self.logger)
+        # Define a slot to handle the task completion
+        def onTaskCompleted(success):
+            if success:
+                feedback.pushInfo("POSTPROCESS - Layers added successfully.")
             else:
-                project.addMapLayer(layer, True)
-                self.logger.info(f"POSTPROCESS - Layer '{layer.name()}' added to QGIS.")
-                feedback.pushInfo(f"POSTPROCESS - Layer '{layer.name()}' added to QGIS.")
+                feedback.reportError("POSTPROCESS - Failed to add layers.")
+            
+        # Connect the task's completed signal to the slot
+        self.add_layers_task.taskCompleted.connect(onTaskCompleted)
+
+        # Start the task
+        success = self.add_layers_task.run()
+        self.add_layers_task.finished(success)
+
+        # # 'group_name' is the name of the group you want to add your layers to
+        # group_name = self.feature_name
+        # # Initialize a list to keep track of loaded layers for adding to a group
+        # loaded_layers = []
+        
+        # project = context.project() if context.project() else QgsProject.instance()
+        # root = project.layerTreeRoot()
+
+        # # Iterate through each layer's information in self.layers_info
+        # for layer_name, info in self.layers_info.items():
+        #     layer_path = info["shape_path"]
+        #     style_path = info["style_path"]
+
+        #     if not Path(layer_path).is_file():
+        #         feedback.reportError(f"POSTPROCESS - Failed to find layer from path: {layer_path}")
+        #         continue  # Skip to the next layer if this one fails to load
+            
+        #     # Generate a timestamp string
+        #     timestamp = datetime.now().strftime("_%Y%m%d_%H:%M")
+        #     modified_layer_name = f"{layer_name}{timestamp}"
+
+        #     # Load the layer
+        #     layer = QgsVectorLayer(layer_path, modified_layer_name, "ogr")
+        #     if not layer.isValid():
+        #         self.logger.error(f"POSTPROCESS - Failed to load layer: {layer_path}")
+        #         continue
+            
+        #     if Path(style_path).is_file():
+        #         layer.loadNamedStyle(style_path)
+        #         layer.triggerRepaint()
+            
+        #     if group_name:
+        #         group = root.findGroup(group_name)
+        #         if not group:
+        #             group = QgsLayerTreeGroup(group_name)
+        #             root.insertChildNode(0, group)
+        #             self.logger.debug(f"POSTPROCESS - Created new group '{group_name}' and added it to the top of the Layer Tree.")
+        #             feedback.pushInfo(f"POSTPROCESS - Created new group '{group_name}' and added it to the top of the Layer Tree.")
+        #         project.addMapLayer(layer, False)
+        #         node_layer = QgsLayerTreeLayer(layer)
+        #         node_layer.setItemVisibilityChecked(True)
+        #         group.addChildNode(node_layer)
+        #         self.logger.debug(f"POSTPROCESS - Added layer '{layer.name()}' to group '{group_name}'.")
+        #         feedback.pushInfo(f"POSTPROCESS - Added layer '{layer.name()}' to group '{group_name}'.")
+        #     else:
+        #         project.addMapLayer(layer, True)
+        #         self.logger.info(f"POSTPROCESS - Layer '{layer.name()}' added to QGIS.")
+        #         feedback.pushInfo(f"POSTPROCESS - Layer '{layer.name()}' added to QGIS.")
            
-        feedback.pushInfo("POSTPROCESS - Layers loaded and organized into the group successfully.")
+        # feedback.pushInfo("POSTPROCESS - Layers loaded and organized into the group successfully.")
 
         return {}
