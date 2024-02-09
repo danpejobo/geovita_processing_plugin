@@ -149,7 +149,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         feedback = QgsProcessingFeedback()
         context = QgsProcessingContext()
         params_short = self.params.copy()
-        params_short["SHORT_TERM_SETTLEMENT"] = False
+        params_short["LONG_TERM_SETTLEMENT"] = False
         results = processing.run(
             "geovita:begrensskadeexcavation",
             params_short,
@@ -170,7 +170,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         feedback = QgsProcessingFeedback()
         context = QgsProcessingContext()
         params_long = self.params.copy()
-        params_long["LONG_TERM_SETTLEMENT"] = False
+        params_long["SHORT_TERM_SETTLEMENT"] = False
         results = processing.run(
             "geovita:begrensskadeexcavation",
             params_long,
