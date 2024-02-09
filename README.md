@@ -3,7 +3,7 @@
 Geovita Processing Provider
 ===========================
 [![Static Badge](https://img.shields.io/badge/plugins.QGIS.org-published-green)](https://plugins.qgis.org/plugins/geovita_processing_plugin/)
-[![Test plugin](https://github.com/danpejobo/geovita_processing_plugin/actions/workflows/test_plugin.yml/badge.svg)](https://github.com/danpejobo/geovita_processing_plugin/actions/workflows/test_plugin.yml)
+[![Test plugin](https://github.com/danpejobo/geovita_processing_plugin/actions/workflows/test_plugin.yml/badge.svg?branch=dev)](https://github.com/danpejobo/geovita_processing_plugin/actions/workflows/test_plugin.yml)
 [![GitHub Release](https://img.shields.io/github/v/release/danpejobo/geovita_processing_plugin)](https://github.com/danpejobo/geovita_processing_plugin/releases)
 
 The Geovita processing provider for QGIS!
