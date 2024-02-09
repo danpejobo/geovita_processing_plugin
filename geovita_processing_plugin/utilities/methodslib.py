@@ -127,7 +127,7 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipp
             logger.debug(f"@process_raster_for_impactmap@ - CRS Description: {dtb_raster_layer.crs().description()}")
             logger.debug(f"@process_raster_for_impactmap@ - CRS text: {dtb_raster_layer.crs().toProj()}")
         else:
-            logger.debug(f"@process_raster_for_impactmap@ - INVALID CRS AFTER CLIP")
+            logger.debug("@process_raster_for_impactmap@ - INVALID CRS AFTER CLIP")
         
         logger.debug("@process_raster_for_impactmap@ - DONE raster clipping")
         feedback.pushInfo("@process_raster_for_impactmap@ --> Done clipping")
@@ -157,7 +157,7 @@ def process_raster_for_impactmap(source_excavation_poly, dtb_raster_layer, clipp
             logger.debug(f"@process_raster_for_impactmap@ - CRS Description: {dtb_raster_layer.crs().description()}")
             logger.debug(f"@process_raster_for_impactmap@ - CRS text: {dtb_raster_layer.crs().toProj()}")
         else:
-            logger.debug(f"@process_raster_for_impactmap@ - INVALID CRS AFTER RESAMPLE")
+            logger.debug("@process_raster_for_impactmap@ - INVALID CRS AFTER RESAMPLE")
         logger.debug("@process_raster_for_impactmap@ DONE raster resampling")
         feedback.pushInfo("@process_raster_for_impactmap@ --> Done resampling")
     
