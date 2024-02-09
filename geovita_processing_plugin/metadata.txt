@@ -7,7 +7,7 @@ name=Geovita GIS Processing provider
 qgisMinimumVersion=3.28
 qgisMaximumVersion=3.99
 description=This plugin adds different Geovita custom processing algorithms to QGIS
-version=2.0.2
+version=3.0.0
 author=DPE
 email=dpe@geovita.no
 
@@ -28,7 +28,14 @@ repository=https://github.com/danpejobo/geovita_processing_plugin
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog=v.2.0.2 (01.02.2024)
+changelog=v.3.0.0 (09.02.2024)
+	- Restructure codebase
+	- Implement postprocessing to add layers (was still some threading issues)
+	- Add tests to try and mitigate the risk of publishing a broken plugin
+	- fix path issue in impactmap (no raster or invalid path)
+	- fix error in how coordinate system for impactmap is set in the main REMEDY repo
+
+	v.2.0.2 (01.02.2024)
 	- Fix unbound local reference to DTB-raster
 	- Fix bug with checking version. Undefined variable if version < 33200
 
