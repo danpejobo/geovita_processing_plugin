@@ -32,7 +32,6 @@ __revision__ = '$Format:%H$'
 
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (Qgis,
-                       QgsApplication,
                        QgsProject,
                        QgsProcessing,
                        QgsProcessingParameterDefinition,
@@ -46,15 +45,11 @@ from qgis.core import (Qgis,
                        QgsProcessingParameterEnum,
                        QgsProcessingParameterField,
                        QgsMessageLog,
-                       QgsVectorLayer,
-                       QgsLayerTreeGroup,
-                       QgsLayerTreeLayer,
                        QgsProcessingException
                        )
 
 import traceback
 from pathlib import Path
-from datetime import datetime
 
 from .base_algorithm import GvBaseProcessingAlgorithms
 from ..utilities.AddLayersTask import AddLayersTask
@@ -105,8 +100,10 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         self.logger = CustomLogger(log_dir_path, "BegrensSkadeII_QGIS_EXCAVATION.log", "EXCAVATION_LOGGER").get_logger()
         self.logger.info(f"__INIT__ - Finished initialize BegrensSkadeExcavation ")
         
+        #instanciate variables used in postprocessing to add layers to GUI
         self.feature_name = None  # Default value
         self.layers_info = {}
+        self.styles_dir_path = Path()
         self.add_layers_task = AddLayersTask()
         
     # Constants used to refer to parameters and outputs. They will be
@@ -683,25 +680,25 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         feedback.pushInfo("PROCESS - Finished with processing!")
         
         # Path to the "styles" directory
-        styles_dir_path = Path(__file__).resolve().parent.parent / "styles"
-        self.logger.info(f"RESULTS - Styles directory path: {styles_dir_path}")
+        self.styles_dir_path = Path(__file__).resolve().parent.parent / "styles"
+        self.logger.info(f"RESULTS - Styles directory path: {self.styles_dir_path}")
         
         self.layers_info = {
             "CORNERS-SETTLEMENT": {
                 "shape_path": output_shapefiles[2],
-                "style_path": f"{str(styles_dir_path)}/CORNERS-SETTLMENT_mm.qml",
+                "style_name": "CORNERS-SETTLMENT_mm.qml",
             },
             "WALLS-ANGLE": {
                 "shape_path": output_shapefiles[1],
-                "style_path": f"{str(styles_dir_path)}/WALL-ANGLE.qml",
+                "style_name": "WALL-ANGLE.qml",
             },
             "BUILDING-TOTAL-SETTLMENT": {
                 "shape_path": output_shapefiles[0],
-                "style_path": f"{str(styles_dir_path)}/BUILDING-TOTAL-SETTLMENT_sv_tot.qml",
+                "style_name": "BUILDING-TOTAL-SETTLMENT_sv_tot.qml",
             },
             "BUILDING-TOTAL-ANGLE": {
                 "shape_path": output_shapefiles[0],
-                "style_path": f"{str(styles_dir_path)}/BUILDING-TOTAL-ANGLE_max_angle.qml",
+                "style_name": "BUILDING-TOTAL-ANGLE_max_angle.qml",
             }
         }
         if bVulnerability:
@@ -709,11 +706,11 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
                 {
                     "BUILDING-RISK-SETTLMENT": {
                         "shape_path": output_shapefiles[0],
-                        "style_path": f"{str(styles_dir_path)}/BUILDING-TOTAL-RISK-SELLMENT_risk_tots.qml",
+                        "style_name": "BUILDING-TOTAL-RISK-SELLMENT_risk_tots.qml",
                     },
                     "BUILDING-TOTAL-ANGLE": {
                         "shape_path": output_shapefiles[0],
-                        "style_path": f"{str(styles_dir_path)}/BUILDING-TOTAL-RISK-ANGLE_risk_angle.qml",
+                        "style_name": "BUILDING-TOTAL-RISK-ANGLE_risk_angle.qml",
                     }
                 }
             )
@@ -756,7 +753,9 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
 #         if not add_layers_task.completed:
 #             raise QgsProcessingException("Error occurred while adding layers.")
         
-        feedback.setProgress(100)
+        feedback.setProgress(90)
+        feedback.pushInfo(f"PROCESS - Finished processing!")
+        # Return the results of the algorithm. 
         return {
             self.OUTPUT_BUILDING: output_shapefiles[0],
             self.OUTPUT_WALL: output_shapefiles[1],
@@ -767,13 +766,15 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
          
 ######### EXPERIMENTAL ADD LAYERS TO GUI #########
         # Create the task
-        self.add_layers_task.setParameters(self.layers_info, self.feature_name, self.logger)
+        self.add_layers_task.setParameters(self.layers_info, self.feature_name, self.styles_dir_path, self.logger)
         # Define a slot to handle the task completion
         def onTaskCompleted(success):
             if success:
                 feedback.pushInfo("POSTPROCESS - Layers added successfully.")
+                feedback.setProgress(100)
             else:
                 feedback.reportError("POSTPROCESS - Failed to add layers.")
+                feedback.setProgress(100)
             
         # Connect the task's completed signal to the slot
         self.add_layers_task.taskCompleted.connect(onTaskCompleted)

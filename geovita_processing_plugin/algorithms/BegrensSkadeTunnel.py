@@ -105,11 +105,16 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         log_dir_path = home_dir / "Downloads" / "REMEDY" / "log"
         self.logger = CustomLogger(log_dir_path, "BegrensSkadeII_QGIS_TUNNEL.log", "TUNNEL_LOGGER").get_logger()
         self.logger.info(f"__INIT__ - Finished initialize BegrensSkadeTunnel ")
+        
+        #instanciate variables used in postprocessing to add layers to GUI
+        self.feature_name = None  # Default value
+        self.layers_info = {}
+        self.styles_dir_path = Path()
+        self.add_layers_task = AddLayersTask()
 
     # Constants used to refer to parameters and outputs. They will be
     # used when calling the algorithm from another algorithm, or when
     # calling from the QGIS console.        
-
     INPUT_BUILDING_POLY = 'INPUT_BUILDING_POLY'
     INPUT_TUNNEL_POLY = 'INPUT_TUNNEL_POLY'
     
@@ -426,8 +431,8 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         output_folder_path.mkdir(parents=True, exist_ok=True)
         self.logger.info(f"PROCESS - Output folder: {output_folder}")
         
-        feature_name = self.parameterAsString(parameters, self.OUTPUT_FEATURE_NAME, context)
-        self.logger.info(f"PROCESS - Feature name: {feature_name}")
+        self.feature_name = self.parameterAsString(parameters, self.OUTPUT_FEATURE_NAME, context)
+        self.logger.info(f"PROCESS - Feature name: {self.feature_name}")
         
         output_proj = self.parameterAsCrs(parameters, self.OUTPUT_CRS, context)
         output_srid = output_proj.postgisSrid()
@@ -561,7 +566,7 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         feedback.pushInfo(f"PROCESS - Param: buildingsFN = {path_source_building_poly}")
         feedback.pushInfo(f"PROCESS - Param: excavationJson = {source_tunnel_poly_as_json}")
         feedback.pushInfo(f"PROCESS - Param: Output folder = {output_folder}")
-        feedback.pushInfo(f"PROCESS - Param: feature_name = {feature_name}")
+        feedback.pushInfo(f"PROCESS - Param: feature_name = {self.feature_name}")
         feedback.pushInfo(f"PROCESS - Param: output_proj = {output_srid}")
         feedback.pushInfo(f"PROCESS - Param: bShortterm = {bShortterm}")
         feedback.pushInfo(f"PROCESS - Param: tunnel_depth = {tunnel_depth}")
@@ -592,7 +597,7 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                 buildingsFN=str(path_source_building_poly),
                 tunnelJson=source_tunnel_poly_as_json,
                 output_ws=output_folder,
-                feature_name=feature_name,
+                feature_name=self.feature_name,
                 output_proj=output_srid,
                 bShortterm=bShortterm,
                 tunnel_depth=tunnel_depth,
@@ -632,55 +637,109 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         feedback.pushInfo("PROCESS - Finished with processing!")
         
         # Path to the "styles" directory
-        styles_dir_path = Path(__file__).resolve().parent.parent / "styles"
-        self.logger.info(f"RESULTS - Styles directory path: {styles_dir_path}")
+        self.styles_dir_path = Path(__file__).resolve().parent.parent / "styles"
+        self.logger.info(f"RESULTS - Styles directory path: {self.styles_dir_path}")
         
-        layers_info = [
-        ("TUNNEL_CORNERS-SETTLEMENT", output_shapefiles[2], "CORNERS-SETTLMENT_mm.qml"),
-        ("TUNNEL_WALLS-ANGLE", output_shapefiles[1], "WALL-ANGLE.qml"),
-        ("TUNNEL_BUILDING-TOTAL-SETTLMENT", output_shapefiles[0], "BUILDING-TOTAL-SETTLMENT_sv_tot.qml"),
-        ("TUNNEL_BUILDING-TOTAL-ANGLE", output_shapefiles[0], "BUILDING-TOTAL-ANGLE_max_angle.qml")
-        ]
-        # Add additional layers if bVulnerability is True
+        self.layers_info = {
+            "TUNNEL_CORNERS-SETTLEMENT": {
+                "shape_path": output_shapefiles[2],
+                "style_name": "CORNERS-SETTLMENT_mm.qml",
+            },
+            "TUNNEL_WALLS-ANGLE": {
+                "shape_path": output_shapefiles[1],
+                "style_name": "WALL-ANGLE.qml",
+            },
+            "TUNNEL_BUILDING-TOTAL-SETTLMENT": {
+                "shape_path": output_shapefiles[0],
+                "style_name": "BUILDING-TOTAL-SETTLMENT_sv_tot.qml",
+            },
+            "TUNNEL_BUILDING-TOTAL-ANGLE": {
+                "shape_path": output_shapefiles[0],
+                "style_name": "BUILDING-TOTAL-ANGLE_max_angle.qml",
+            }
+        }
         if bVulnerability:
-            layers_info.extend([
-                ("TUNNEL_BUILDING-RISK-SETTLMENT", output_shapefiles[0], "BUILDING-TOTAL-RISK-SELLMENT_risk_tots.qml"),
-                ("TUNNEL_BUILDING-RISK-ANGLE", output_shapefiles[0], "BUILDING-TOTAL-RISK-ANGLE_risk_angle.qml")
-            ])
+            self.layers_info.update(
+                {
+                    "TUNNEL_BUILDING-RISK-SETTLMENT": {
+                        "shape_path": output_shapefiles[0],
+                        "style_name": "BUILDING-TOTAL-RISK-SELLMENT_risk_tots.qml",
+                    },
+                    "TUNNEL_BUILDING-RISK-ANGLE": {
+                        "shape_path": output_shapefiles[0],
+                        "style_name": "BUILDING-TOTAL-RISK-ANGLE_risk_angle.qml",
+                    }
+                }
+            )
+        
+#         layers_info = [
+#         ("TUNNEL_CORNERS-SETTLEMENT", output_shapefiles[2], "CORNERS-SETTLMENT_mm.qml"),
+#         ("TUNNEL_WALLS-ANGLE", output_shapefiles[1], "WALL-ANGLE.qml"),
+#         ("TUNNEL_BUILDING-TOTAL-SETTLMENT", output_shapefiles[0], "BUILDING-TOTAL-SETTLMENT_sv_tot.qml"),
+#         ("TUNNEL_BUILDING-TOTAL-ANGLE", output_shapefiles[0], "BUILDING-TOTAL-ANGLE_max_angle.qml")
+#         ]
+#         # Add additional layers if bVulnerability is True
+#         if bVulnerability:
+#             layers_info.extend([
+#                 ("TUNNEL_BUILDING-RISK-SETTLMENT", output_shapefiles[0], "BUILDING-TOTAL-RISK-SELLMENT_risk_tots.qml"),
+#                 ("TUNNEL_BUILDING-RISK-ANGLE", output_shapefiles[0], "BUILDING-TOTAL-RISK-ANGLE_risk_angle.qml")
+#             ])
 
-######### EXPERIMENTAL ADD LAYERS TO GUI #########
-        # Create the task
-        add_layers_task = AddLayersTask("Add Layers", layers_info, feature_name, styles_dir_path, self.logger)
-        # Local event loop
-        loop = QEventLoop()
-        # Define a slot to handle the task completion
-        def onTaskCompleted(success):
-            if success:
-                feedback.pushInfo("Layers added successfully.")
-            else:
-                feedback.reportError("Failed to add layers.")
-            loop.quit()  # Quit the event loop
+# ######### EXPERIMENTAL ADD LAYERS TO GUI #########
+#         # Create the task
+#         add_layers_task = AddLayersTask("Add Layers", layers_info, self.feature_name, styles_dir_path, self.logger)
+#         # Local event loop
+#         loop = QEventLoop()
+#         # Define a slot to handle the task completion
+#         def onTaskCompleted(success):
+#             if success:
+#                 feedback.pushInfo("Layers added successfully.")
+#             else:
+#                 feedback.reportError("Failed to add layers.")
+#             loop.quit()  # Quit the event loop
             
-        # Connect the task's completed signal to the slot
-        add_layers_task.taskCompleted.connect(onTaskCompleted)
+#         # Connect the task's completed signal to the slot
+#         add_layers_task.taskCompleted.connect(onTaskCompleted)
 
-        # Start the task
-        QgsApplication.taskManager().addTask(add_layers_task)
-        # Start the event loop
-        loop.exec_()
+#         # Start the task
+#         QgsApplication.taskManager().addTask(add_layers_task)
+#         # Start the event loop
+#         loop.exec_()
 
-        # Check if the task was successful
-        if not add_layers_task.completed:
-            raise QgsProcessingException("Error occurred while adding layers.")
+#         # Check if the task was successful
+#         if not add_layers_task.completed:
+#             raise QgsProcessingException("Error occurred while adding layers.")
         
-        feedback.setProgress(100)
-        feedback.pushInfo(f"RESULTS - Finished adding results!")
-        
+        feedback.setProgress(90)
+        feedback.pushInfo(f"PROCESS - Finished processing!")
+        # Return the results of the algorithm. 
         return {
             self.OUTPUT_BUILDING: output_shapefiles[0],
             self.OUTPUT_WALL: output_shapefiles[1],
             self.OUTPUT_CORNER: output_shapefiles[2],
         }
+    
+    def postProcessAlgorithm(self, context, feedback):
+         
+######### EXPERIMENTAL ADD LAYERS TO GUI #########
+        # Create the task
+        self.add_layers_task.setParameters(self.layers_info, self.feature_name, self.styles_dir_path, self.logger)
+        # Define a slot to handle the task completion
+        def onTaskCompleted(success):
+            if success:
+                feedback.pushInfo("POSTPROCESS - Layers added successfully.")
+                feedback.setProgress(100)
+            else:
+                feedback.reportError("POSTPROCESS - Failed to add layers.")
+                feedback.setProgress(100)
+            
+        # Connect the task's completed signal to the slot
+        self.add_layers_task.taskCompleted.connect(onTaskCompleted)
+
+        # Start the task
+        success = self.add_layers_task.run()
+        self.add_layers_task.finished(success)
+        return {}
 
     def name(self):
         """
@@ -690,7 +749,7 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return 'begrensskadesunnel'
+        return 'begrensskadetunnel'
 
     def displayName(self):
         """

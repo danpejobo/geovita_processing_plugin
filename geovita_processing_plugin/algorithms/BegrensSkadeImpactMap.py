@@ -102,11 +102,16 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         log_dir_path = home_dir / "Downloads" / "REMEDY" / "log"
         self.logger = CustomLogger(log_dir_path, "BegrensSkadeII_QGIS_IMPACTMAP.log", "IMPACTMAP_LOGGER").get_logger()
         self.logger.info(f"__INIT__ - Finished initialize BegrensSkadeImpactMap ")
+        
+        #instanciate variables used in postprocessing to add layers to GUI
+        self.feature_name = None  # Default value
+        self.layers_info = {}
+        self.styles_dir_path = Path()
+        self.add_layers_task = AddLayersTask()
 
     # Constants used to refer to parameters and outputs. They will be
     # used when calling the algorithm from another algorithm, or when
     # calling from the QGIS console.
-    
     INPUT_EXCAVATION_POLY = 'INPUT_EXCAVATION_POLY'
     OUTPUT_FOLDER = 'OUTPUT_FOLDER'
     OUTPUT_FEATURE_NAME = 'OUTPUT_FEATURE_NAME'
@@ -322,12 +327,12 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         )
         self.logger.info(f"PROCESS - bShortterm value: {bShortterm}")
               
-        feature_name = self.parameterAsString(
+        self.feature_name = self.parameterAsString(
                 parameters,
                 self.OUTPUT_FEATURE_NAME,
                 context
             )
-        self.logger.info(f"PROCESS - Feature name: {feature_name}")
+        self.logger.info(f"PROCESS - Feature name: {self.feature_name}")
         
         output_proj = self.parameterAsCrs(
             parameters,
@@ -446,7 +451,7 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         ###### FEEDBACK ALL PARAMETERS #########
         feedback.pushInfo(f"PROCESS - PARAM excavationJson: {source_excavation_poly_as_json}")
         feedback.pushInfo(f"PROCESS - PARAM output_ws: {str(output_folder_path)}")
-        feedback.pushInfo(f"PROCESS - PARAM output_name: {feature_name}")
+        feedback.pushInfo(f"PROCESS - PARAM output_name: {self.feature_name}")
         feedback.pushInfo(f"PROCESS - PARAM CALCULATION_RANGE: {clipping_range}")
         feedback.pushInfo(f"PROCESS - PARAM output_proj: {output_srid}")
         feedback.pushInfo(f"PROCESS - PARAM dtb_raster: {str(path_processed_raster)}")
@@ -471,7 +476,7 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
                 logger=self.logger,
                 excavationJson=source_excavation_poly_as_json,
                 output_ws=str(output_folder_path),
-                output_name=feature_name,
+                output_name=self.feature_name,
                 CALCULATION_RANGE=clipping_range, # '380' hardcoded constant used in the underlying submodule's method.
                 output_proj=output_srid,
                 dtb_raster=str(path_processed_raster),
@@ -503,42 +508,71 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         feedback.pushInfo("PROCESS - Finished with processing!")
         
         # Path to the "styles" directory
-        styles_dir_path = Path(__file__).resolve().parent.parent / "styles"
-        self.logger.info(f"RESULTS - Styles directory path: {styles_dir_path}")
+        self.styles_dir_path = Path(__file__).resolve().parent.parent / "styles"
+        self.logger.info(f"RESULTS - Styles directory path: {self.styles_dir_path}")
         
-        layers_info = [
-            ("IMPACT-MAP", output_raster_path, "IMPACT-MAP.qml")
-        ]
+        self.layers_info = {
+            "IMPACT-MAP": {
+                "shape_path": output_raster_path,
+                "style_name": "IMPACT-MAP.qml"
+            }
+        }
+        
+#         layers_info = [
+#             ("IMPACT-MAP", output_raster_path, "IMPACT-MAP.qml")
+#         ]
 
-######### EXPERIMENTAL ADD LAYERS TO GUI #########
+# ######### EXPERIMENTAL ADD LAYERS TO GUI #########
+#         # Create the task
+#         add_layers_task = AddLayersTask("Add Layers", layers_info, feature_name, styles_dir_path, self.logger)
+#         # Local event loop
+#         loop = QEventLoop()
+#         # Define a slot to handle the task completion
+#         def onTaskCompleted(success):
+#             if success:
+#                 feedback.pushInfo("RESULTS - Layers added successfully.")
+#             else:
+#                 feedback.reportError("RESULTS - Failed to add layers.")
+#             loop.quit()  # Quit the event loop
+            
+#         # Connect the task's completed signal to the slot
+#         add_layers_task.taskCompleted.connect(onTaskCompleted)
+
+#         # Start the task
+#         QgsApplication.taskManager().addTask(add_layers_task)
+#         # Start the event loop
+#         loop.exec_()
+
+#         # Check if the task was successful
+#         if not add_layers_task.completed:
+#             raise QgsProcessingException("RESULTS - Error occurred while adding layers.")
+        
+        feedback.setProgress(90)
+        feedback.pushInfo(f"PROCESS - Finished processing!")
+        # Return the results of the algorithm. 
+        return {self.OUTPUT_FOLDER: output_raster_path}
+    
+    def postProcessAlgorithm(self, context, feedback):
+    ######### EXPERIMENTAL ADD LAYERS TO GUI #########
         # Create the task
-        add_layers_task = AddLayersTask("Add Layers", layers_info, feature_name, styles_dir_path, self.logger)
-        # Local event loop
-        loop = QEventLoop()
+        self.add_layers_task.setParameters(self.layers_info, self.feature_name, self.styles_dir_path, self.logger)
         # Define a slot to handle the task completion
         def onTaskCompleted(success):
             if success:
-                feedback.pushInfo("RESULTS - Layers added successfully.")
+                feedback.pushInfo("POSTPROCESS - Layers added successfully.")
+                feedback.setProgress(100)
             else:
-                feedback.reportError("RESULTS - Failed to add layers.")
-            loop.quit()  # Quit the event loop
+                feedback.reportError("POSTPROCESS - Failed to add layers.")
+                feedback.setProgress(100)
             
         # Connect the task's completed signal to the slot
-        add_layers_task.taskCompleted.connect(onTaskCompleted)
+        self.add_layers_task.taskCompleted.connect(onTaskCompleted)
 
         # Start the task
-        QgsApplication.taskManager().addTask(add_layers_task)
-        # Start the event loop
-        loop.exec_()
-
-        # Check if the task was successful
-        if not add_layers_task.completed:
-            raise QgsProcessingException("RESULTS - Error occurred while adding layers.")
+        success = self.add_layers_task.run()
+        self.add_layers_task.finished(success)
+        return {}
         
-        feedback.setProgress(100)
-        feedback.pushInfo(f"RESULTS - Finished adding results!")
-        # Return the results of the algorithm. 
-        return {self.OUTPUT_FOLDER: output_raster_path}
 
     def name(self):
         """
