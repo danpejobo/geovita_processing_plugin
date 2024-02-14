@@ -433,29 +433,43 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         param = QgsProcessingParameterField(
             self.FILED_NAME_BUILDING_FOUNDATION[0],
             self.tr(f"{self.FILED_NAME_BUILDING_FOUNDATION[1]}"),
+            defaultValue=None,
             parentLayerParameterName=self.INPUT_BUILDING_POLY,
             allowMultiple=False,
             optional=True,
         )
-        param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
+        param.setFlags(
+            QgsProcessingParameterDefinition.FlagAdvanced
+            | QgsProcessingParameterDefinition.FlagOptional
+        )
         self.addParameter(param)
+        
         param = QgsProcessingParameterField(
             self.FILED_NAME_BUILDING_STRUCTURE[0],
             self.tr(f"{self.FILED_NAME_BUILDING_STRUCTURE[1]}"),
+            defaultValue=None,
             parentLayerParameterName=self.INPUT_BUILDING_POLY,
             allowMultiple=False,
             optional=True,
         )
-        param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
+        param.setFlags(
+            QgsProcessingParameterDefinition.FlagAdvanced
+            | QgsProcessingParameterDefinition.FlagOptional
+        )
         self.addParameter(param)
+        
         param = QgsProcessingParameterField(
             self.FILED_NAME_BUILDING_STATUS[0],
             self.tr(f"{self.FILED_NAME_BUILDING_STATUS[1]}"),
+            defaultValue=None,
             parentLayerParameterName=self.INPUT_BUILDING_POLY,
             allowMultiple=False,
             optional=True,
         )
-        param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
+        param.setFlags(
+            QgsProcessingParameterDefinition.FlagAdvanced
+            | QgsProcessingParameterDefinition.FlagOptional
+        )
         self.addParameter(param)
 
         # DEFINE OUTPUTS
@@ -713,23 +727,30 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         if bVulnerability:
             self.logger.info("PROCESS - ######## VULNERABILITY ########")
             self.logger.info("PROCESS - Defining vulnerability input")
-            foundation_field = self.parameterAsString(
+            foundation_field_param = self.parameterAsString(
                 parameters, self.FILED_NAME_BUILDING_FOUNDATION[0], context
+            )
+            foundation_field = (
+                foundation_field_param if foundation_field_param.strip() else None
             )
             self.logger.info(
                 f"PROCESS - Foundation: {foundation_field} Type: {type(foundation_field)}"
             )
 
-            structure_field = self.parameterAsString(
+            structure_field_param = self.parameterAsString(
                 parameters, self.FILED_NAME_BUILDING_STRUCTURE[0], context
+            )
+            structure_field = (
+                structure_field_param if structure_field_param.strip() else None
             )
             self.logger.info(
                 f"PROCESS - Structure: {structure_field} Type: {type(structure_field)}"
             )
 
-            status_field = self.parameterAsString(
+            status_field_param = self.parameterAsString(
                 parameters, self.FILED_NAME_BUILDING_STATUS[0], context
             )
+            status_field = status_field_param if status_field_param.strip() else None
             self.logger.info(
                 f"PROCESS - Condition: {status_field} Type: {type(status_field)}"
             )
@@ -880,8 +901,8 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         """
         Handles the post-processing steps of the algorithm, specifically adding output layers to the QGIS project.
 
-        This method creates and executes a process to add layers to the QGIS interface, applying predefined styles 
-        and organizing them within a specified group. It leverages the `AddLayersTask` class to manage layer 
+        This method creates and executes a process to add layers to the QGIS interface, applying predefined styles
+        and organizing them within a specified group. It leverages the `AddLayersTask` class to manage layer
         addition in a way that ensures thread safety and proper GUI updates.
 
         Parameters:
@@ -892,7 +913,7 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         - dict: An empty dictionary. This method does not produce output parameters but instead focuses on the side effect of adding layers to the project.
 
         Note:
-        This method sets up a task for layer addition, defining success and failure callbacks to provide user feedback. 
+        This method sets up a task for layer addition, defining success and failure callbacks to provide user feedback.
         It manually starts the process and handles its completion.
         """
         ######### EXPERIMENTAL ADD LAYERS TO GUI #########
