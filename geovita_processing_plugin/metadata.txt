@@ -28,7 +28,10 @@ repository=https://github.com/danpejobo/geovita_processing_plugin
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog=v.3.0.0 (09.02.2024)
+changelog=v.3.1.0 (14.02.2024)
+	- Minor fix in vulnerability analysis for excavation and tunnel. Fields can be omitted (i.e corresponding analysis are dropped). Any combination of the three vulnerability fields can be assessed.
+
+	v.3.0.0 (09.02.2024)
 	- Restructure codebase
 	- Implement postprocessing to add layers (was still some threading issues)
 	- Add tests to try and mitigate the risk of publishing a broken plugin
