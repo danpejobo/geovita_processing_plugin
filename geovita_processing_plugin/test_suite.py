@@ -44,7 +44,7 @@ def _run_tests(test_suite, package_name, with_coverage=True):
     if with_coverage:
         cov = coverage.Coverage(
             source=['/geovita_processing_plugin'],
-            omit=['*/test/*'],
+            omit=['*/test/*', '*/test_suite.py'],
         )
         cov.start()
 
@@ -53,13 +53,14 @@ def _run_tests(test_suite, package_name, with_coverage=True):
     if with_coverage:
         cov.stop()
         cov.save()
-        report = tempfile.NamedTemporaryFile(delete=False)  # pylint: disable=consider-using-with
+        #report = tempfile.NamedTemporaryFile(delete=False)  # pylint: disable=consider-using-with
+        report = sys.stdout
         cov.report(file=report)
         # Produce HTML reports in the `htmlcov` folder and open index.html
         # cov.html_report()
-        report.close()
-        with open(report.name, 'r', encoding='utf8') as fin:
-            print(fin.read())
+        #report.close()
+        #with open(report.name, 'r', encoding='utf8') as fin:
+        #    print(fin.read())
 
 
 def test_package(package='geovita_processing_plugin.test'):
