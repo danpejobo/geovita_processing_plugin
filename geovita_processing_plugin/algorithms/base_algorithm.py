@@ -32,8 +32,12 @@ __revision__ = '$Format:%H$'
 
 from qgis.core import (QgsProcessingAlgorithm)
 
+from geovita_processing_plugin import __version__  # Import version from package's __init__.py
+
 
 class GvBaseProcessingAlgorithms(QgsProcessingAlgorithm):
     """
     Base class for Geovita algorithms.
     """
+    def getVersion(self):
+        return __version__

@@ -108,13 +108,17 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         self.logger = CustomLogger(
             log_dir_path, "BegrensSkadeII_QGIS_TUNNEL.log", "TUNNEL_LOGGER"
         ).get_logger()
-        self.logger.info("__INIT__ - Finished initialize BegrensSkadeTunnel ")
+        
+        # Retrieve version number from BaseAlgorithm class "GvBaseProcessingAlgorithms"
+        self.version = self.getVersion()
+        self.logger.info(f"__INIT__ - VERSION: {self.version} ")
 
         # instanciate variables used in postprocessing to add layers to GUI
         self.feature_name = None  # Default value
         self.layers_info = {}
         self.styles_dir_path = Path()
         self.add_layers_task = AddLayersTask()
+        self.logger.info("__INIT__ - Finished initialize BegrensSkadeTunnel ")
 
     def name(self):
         """
@@ -501,6 +505,9 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         """
         Here is where the processing itself takes place.
         """
+        feedback.pushInfo(
+                f"PROCESS - Version: {self.version}"
+            )
         bShortterm = self.parameterAsBoolean(
             parameters, self.SHORT_TERM_SETTLEMENT[0], context
         )
