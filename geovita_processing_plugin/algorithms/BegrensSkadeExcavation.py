@@ -849,7 +849,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
                         "shape_path": output_shapefiles[0],
                         "style_name": "BUILDING-TOTAL-RISK-SELLMENT_risk_tots.qml",
                     },
-                    "BUILDING-TOTAL-ANGLE": {
+                    "BUILDING-RISK-ANGLE": {
                         "shape_path": output_shapefiles[0],
                         "style_name": "BUILDING-TOTAL-RISK-ANGLE_risk_angle.qml",
                     },
