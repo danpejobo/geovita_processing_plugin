@@ -7,7 +7,7 @@ name=Geovita GIS Processing provider
 qgisMinimumVersion=3.28
 qgisMaximumVersion=3.99
 description=This plugin adds different Geovita custom processing algorithms to QGIS
-version=3.1.0
+version=3.1.1
 author=DPE
 email=dpe@geovita.no
 
@@ -28,7 +28,12 @@ repository=https://github.com/danpejobo/geovita_processing_plugin
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog=v.3.1.0 (14.02.2024)
+changelog=v.3.1.1 (04.03.2024)
+	- Add version logging and feedback.
+	- Fix for two layers having the same name in the excavation algorithm (thus only one showing in TOC)
+	- Fix "label" attributes for the styles to the excavation and tunnel algorithms
+
+	v.3.1.0 (14.02.2024)
 	- Minor fix in vulnerability analysis for excavation and tunnel. Fields can be omitted (i.e corresponding analysis are dropped). Any combination of the three vulnerability fields can be assessed.
 
 	v.3.0.0 (09.02.2024)

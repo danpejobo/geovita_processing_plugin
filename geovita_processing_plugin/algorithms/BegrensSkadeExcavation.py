@@ -108,13 +108,17 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
             "BegrensSkadeII_QGIS_EXCAVATION.log",
             "EXCAVATION_LOGGER",
         ).get_logger()
-        self.logger.info("__INIT__ - Finished initialize BegrensSkadeExcavation ")
+        
+        # Retrieve version number from BaseAlgorithm class "GvBaseProcessingAlgorithms"
+        self.version = self.getVersion()
+        self.logger.info(f"__INIT__ - VERSION: {self.version} ")
 
         # instanciate variables used in postprocessing to add layers to GUI
         self.feature_name = None  # Default value
         self.layers_info = {}
         self.styles_dir_path = Path()
         self.add_layers_task = AddLayersTask()
+        self.logger.info("__INIT__ - Finished initialize BegrensSkadeExcavation ")
 
     def tr(self, string):
         return QCoreApplication.translate("Processing", string)
@@ -482,6 +486,9 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         Here is where the processing itself takes place.
         """
         self.logger.info("PROCESS - Starting the processing")
+        feedback.pushInfo(
+                f"PROCESS - Version: {self.version}"
+            )
         # Retrieve the feature source and sink. The 'dest_id' variable is used
         # to uniquely identify the feature sink, and must be included in the
         # dictionary returned by the processAlgorithm function.
@@ -849,7 +856,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
                         "shape_path": output_shapefiles[0],
                         "style_name": "BUILDING-TOTAL-RISK-SELLMENT_risk_tots.qml",
                     },
-                    "BUILDING-TOTAL-ANGLE": {
+                    "BUILDING-RISK-ANGLE": {
                         "shape_path": output_shapefiles[0],
                         "style_name": "BUILDING-TOTAL-RISK-ANGLE_risk_angle.qml",
                     },
