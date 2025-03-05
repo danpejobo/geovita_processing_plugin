@@ -83,7 +83,7 @@ jobs:
 
       - name: Docker run plugin tests
         run: |
-          docker exec qgis-testing-environment sh -c "export PYTHONPATH=/root/.local/share/QGIS/QGIS3/profiles/default/python/plugins:$PYTHONPATH && qgis_testrunner.sh $TESTS_RUN_FUNCTION"
+          docker exec qgis-testing-environment sh -c "qgis_testrunner.sh $TESTS_RUN_FUNCTION"
 
   Check-code-quality:
     runs-on: ubuntu-latest
