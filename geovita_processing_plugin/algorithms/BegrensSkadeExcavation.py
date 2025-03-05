@@ -205,12 +205,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         "RASTER_ROCK_SURFACE",
         "Input raster of depth to bedrock",
     ]
-    # POREPRESSURE_ENUM = ["POREPRESSURE_ENUM", "Pore pressure reduction curves"]
-    # enum_porepressure = [
-    #     "Lav poretrykksreduksjon",
-    #     "Middels poretrykksreduksjon",
-    #     "Høy poretrykksreduksjon",
-    # ]
+
     POREWP_REDUCTION_M = [
         "POREWP_REDUCTION_M",
         "Porewater pressure reduction [m]",
@@ -322,16 +317,6 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
             | QgsProcessingParameterDefinition.FlagOptional
         )
         self.addParameter(param)
-
-        # param = QgsProcessingParameterEnum(
-        #     self.POREPRESSURE_ENUM[0],
-        #     self.tr(f"{self.POREPRESSURE_ENUM[1]}"),
-        #     self.enum_porepressure,
-        #     defaultValue=1,
-        #     allowMultiple=False,
-        # )
-        # param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
-        # self.addParameter(param)
         
         param = QgsProcessingParameterNumber(
             self.POREWP_REDUCTION_M[0],
@@ -663,10 +648,6 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
                 )
                 return {}
 
-            # porepressure_index = self.parameterAsEnum(
-            #     parameters, self.POREPRESSURE_ENUM[0], context
-            # )
-            # pw_reduction_curve = self.enum_porepressure[porepressure_index]
             dry_crust_thk = self.parameterAsDouble(
                 parameters, self.DRY_CRUST_THICKNESS[0], context
             )
@@ -695,7 +676,6 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
 
         else:
             path_source_raster_rock_surface = None
-            # pw_reduction_curve = None
             dry_crust_thk = None
             dep_groundwater = None
             density_sat = None
@@ -771,7 +751,6 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         feedback.pushInfo(
             f"PROCESS - Param: dtb_raster = {path_source_raster_rock_surface}"
         )
-        # feedback.pushInfo(f"PROCESS - Param: pw_reduction_curve = {pw_reduction_curve}")
         feedback.pushInfo(f"PROCESS - Param: dry_crust_thk = {dry_crust_thk}")
         feedback.pushInfo(f"PROCESS - Param: dep_groundwater = {dep_groundwater}")
         feedback.pushInfo(f"PROCESS - Param: density_sat = {density_sat}")
@@ -799,7 +778,6 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
                 short_term_curve=short_term_curve,
                 bLongterm=bLongterm,
                 dtb_raster=str(path_source_raster_rock_surface),
-                # pw_reduction_curve=pw_reduction_curve,
                 dry_crust_thk=dry_crust_thk,
                 dep_groundwater=dep_groundwater,
                 density_sat=density_sat,
