@@ -71,7 +71,7 @@ jobs:
 
       - name: Docker run plugin tests
         run: |
-          docker exec qgis-testing-environment sh -c "export DISPLAY=:99; && qgis_testrunner.sh $TESTS_RUN_FUNCTION"
+          docker exec qgis-testing-environment sh -c "export DISPLAY=:99; qgis_testrunner.sh $TESTS_RUN_FUNCTION"
 
   Check-code-quality:
     runs-on: ubuntu-latest
