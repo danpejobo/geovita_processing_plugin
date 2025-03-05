@@ -200,13 +200,13 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         "CLIPPING_RANGE",
         "Clip distance in case of high resolution (buffer distance in [meters])",
     ]
-    POREPRESSURE_ENUM = ["POREPRESSURE_ENUM", "Pore pressure reduction curves"]
-    enum_porepressure = [
-        "Lav poretrykksreduksjon",
-        "Middels poretrykksreduksjon",
-        "Høy poretrykksreduksjon",
-    ]
-    POREPRESSURE_REDUCTION = ["POREPRESSURE_REDUCTION", "Porepressure reduction [kPa]"]
+    # POREPRESSURE_ENUM = ["POREPRESSURE_ENUM", "Pore pressure reduction curves"]
+    # enum_porepressure = [
+    #     "Lav poretrykksreduksjon",
+    #     "Middels poretrykksreduksjon",
+    #     "Høy poretrykksreduksjon",
+    # ]
+    POREWP_REDUCTION_M = ["POREWP_REDUCTION_M", "Porewater pressure reduction [m]"]
     DRY_CRUST_THICKNESS = [
         "DRY_CRUST_THICKNESS",
         "Thickness of overburden not affected by porewater drawdown [m]",
@@ -313,19 +313,21 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
-        param = QgsProcessingParameterEnum(
-            self.POREPRESSURE_ENUM[0],
-            self.tr(f"{self.POREPRESSURE_ENUM[1]}"),
-            self.enum_porepressure,
-            defaultValue=1,
-            allowMultiple=False,
-        )
-        param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
-        self.addParameter(param)
+        
+        # param = QgsProcessingParameterEnum(
+        #     self.POREPRESSURE_ENUM[0],
+        #     self.tr(f"{self.POREPRESSURE_ENUM[1]}"),
+        #     self.enum_porepressure,
+        #     defaultValue=1,
+        #     allowMultiple=False,
+        # )
+        # param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
+        # self.addParameter(param)
+        
         param = QgsProcessingParameterNumber(
-            self.POREPRESSURE_REDUCTION[0],
-            self.tr(f"{self.POREPRESSURE_REDUCTION[1]}"),
-            defaultValue=50,
+            self.POREWP_REDUCTION_M[0],
+            self.tr(f"{self.POREWP_REDUCTION_M[1]}"),
+            defaultValue=10,
             minValue=0,
         )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
@@ -421,13 +423,13 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         clipping_range = self.parameterAsInt(
             parameters, self.CLIPPING_RANGE[0], context
         )
-        porepressure_index = self.parameterAsEnum(
-            parameters, self.POREPRESSURE_ENUM[0], context
-        )
+        # porepressure_index = self.parameterAsEnum(
+        #     parameters, self.POREPRESSURE_ENUM[0], context
+        # )
         output_resolution = self.parameterAsDouble(
             parameters, self.OUTPUT_RESOLUTION[0], context
         )
-        pw_reduction_curve = self.enum_porepressure[porepressure_index]
+        # pw_reduction_curve = self.enum_porepressure[porepressure_index]
         dry_crust_thk = self.parameterAsDouble(
             parameters, self.DRY_CRUST_THICKNESS[0], context
         )
@@ -436,8 +438,8 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         )
         density_sat = self.parameterAsDouble(parameters, self.SOIL_DENSITY[0], context)
         ocr_value = self.parameterAsDouble(parameters, self.OCR[0], context)
-        porewp_red = self.parameterAsInt(
-            parameters, self.POREPRESSURE_REDUCTION[0], context
+        porewp_red_m = self.parameterAsInt(
+            parameters, self.POREWP_REDUCTION_M[0], context
         )
         janbu_ref_stress = self.parameterAsInt(
             parameters, self.JANBU_REF_STRESS[0], context
@@ -579,12 +581,12 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         feedback.pushInfo(f"PROCESS - PARAM CALCULATION_RANGE: {clipping_range}")
         feedback.pushInfo(f"PROCESS - PARAM output_proj: {output_srid}")
         feedback.pushInfo(f"PROCESS - PARAM dtb_raster: {str(path_processed_raster)}")
-        feedback.pushInfo(f"PROCESS - PARAM pw_reduction_curve: {pw_reduction_curve}")
+        # feedback.pushInfo(f"PROCESS - PARAM pw_reduction_curve: {pw_reduction_curve}")
         feedback.pushInfo(f"PROCESS - PARAM dry_crust_thk: {dry_crust_thk}")
         feedback.pushInfo(f"PROCESS - PARAM dep_groundwater: {dep_groundwater}")
         feedback.pushInfo(f"PROCESS - PARAM density_sat: {density_sat}")
         feedback.pushInfo(f"PROCESS - PARAM OCR: {ocr_value}")
-        feedback.pushInfo(f"PROCESS - PARAM porewp_red: {porewp_red}")
+        feedback.pushInfo(f"PROCESS - PARAM porewp_red_m: {porewp_red_m}")
         feedback.pushInfo(f"PROCESS - PARAM janbu_ref_stress: {janbu_ref_stress}")
         feedback.pushInfo(f"PROCESS - PARAM janbu_const: {janbu_const}")
         feedback.pushInfo(f"PROCESS - PARAM janbu_m: {janbu_m}")
@@ -604,12 +606,12 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
                 CALCULATION_RANGE=clipping_range,  # '380' hardcoded constant used in the underlying submodule's method.
                 output_proj=output_srid,
                 dtb_raster=str(path_processed_raster),
-                pw_reduction_curve=pw_reduction_curve,
+                # pw_reduction_curve=pw_reduction_curve,
                 dry_crust_thk=dry_crust_thk,
                 dep_groundwater=dep_groundwater,
                 density_sat=density_sat,
                 OCR=ocr_value,
-                porewp_red=porewp_red,
+                porewp_red_m=porewp_red_m,
                 janbu_ref_stress=janbu_ref_stress,
                 janbu_const=janbu_const,
                 janbu_m=janbu_m,

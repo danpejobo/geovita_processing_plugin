@@ -204,9 +204,9 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         "TUNNEL_LEAKAGE",
         "Leakage of water into the tunnel [L/min each 100m of tunnelsection]",
     ]
-    POREPRESSURE_REDUCTION = [
-        "POREPRESSURE_REDUCTION",
-        'Porepressure reduction with tunnel (only used if the curve is "Manual" [kPa]',
+    POREWP_REDUCTION = [
+        "POREWP_REDUCTION",
+        'Porewater pressure reduction at tunnel (only used if the curve is "Manual") [m]',
     ]
     DRY_CRUST_THICKNESS = [
         "DRY_CRUST_THICKNESS",
@@ -352,8 +352,8 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         self.addParameter(param)
 
         param = QgsProcessingParameterNumber(
-            self.POREPRESSURE_REDUCTION[0],
-            self.tr(f"{self.POREPRESSURE_REDUCTION[1]}"),
+            self.POREWP_REDUCTION[0],
+            self.tr(f"{self.POREWP_REDUCTION[1]}"),
             defaultValue=0,
             optional=True,
             minValue=0,
@@ -691,8 +691,8 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
             tunnel_leakage = self.parameterAsDouble(
                 parameters, self.TUNNEL_LEAKAGE[0], context
             )
-            porewp_red_at_site = self.parameterAsInt(
-                parameters, self.POREPRESSURE_REDUCTION[0], context
+            porewp_red_at_site_m = self.parameterAsInt(
+                parameters, self.POREWP_REDUCTION[0], context
             )
             dry_crust_thk = self.parameterAsDouble(
                 parameters, self.DRY_CRUST_THICKNESS[0], context
@@ -719,7 +719,7 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
 
         else:
             porewp_calc_type = None
-            porewp_red_at_site = None
+            porewp_red_at_site_m = None
             tunnel_leakage = None
             path_source_raster_rock_surface = None
             dry_crust_thk = None
@@ -797,7 +797,7 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         feedback.pushInfo(f"PROCESS - Param: bLongterm = {bLongterm}")
         feedback.pushInfo(f"PROCESS - Param: tunnel_leakage = {tunnel_leakage}")
         feedback.pushInfo(f"PROCESS - Param: porewp_calc_type = {porewp_calc_type}")
-        feedback.pushInfo(f"PROCESS - Param: porewp_red_at_site = {porewp_red_at_site}")
+        feedback.pushInfo(f"PROCESS - Param: porewp_red_at_site_m = {porewp_red_at_site_m}")
         feedback.pushInfo(
             f"PROCESS - Param: dtb_raster = {path_source_raster_rock_surface}"
         )
@@ -830,7 +830,7 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                 bLongterm=bLongterm,
                 tunnel_leakage=tunnel_leakage,
                 porewp_calc_type=porewp_calc_type,
-                porewp_red_at_site=porewp_red_at_site,
+                porewp_red_at_site_m=porewp_red_at_site_m,
                 dtb_raster=str(path_source_raster_rock_surface),
                 dry_crust_thk=dry_crust_thk,
                 dep_groundwater=dep_groundwater,

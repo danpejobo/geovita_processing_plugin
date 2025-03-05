@@ -205,15 +205,15 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         "RASTER_ROCK_SURFACE",
         "Input raster of depth to bedrock",
     ]
-    POREPRESSURE_ENUM = ["POREPRESSURE_ENUM", "Pore pressure reduction curves"]
-    enum_porepressure = [
-        "Lav poretrykksreduksjon",
-        "Middels poretrykksreduksjon",
-        "Høy poretrykksreduksjon",
-    ]
-    POREPRESSURE_REDUCTION = [
-        "POREPRESSURE_REDUCTION",
-        "Porepressure reduction [kPa]",
+    # POREPRESSURE_ENUM = ["POREPRESSURE_ENUM", "Pore pressure reduction curves"]
+    # enum_porepressure = [
+    #     "Lav poretrykksreduksjon",
+    #     "Middels poretrykksreduksjon",
+    #     "Høy poretrykksreduksjon",
+    # ]
+    POREWP_REDUCTION_M = [
+        "POREWP_REDUCTION_M",
+        "Porewater pressure reduction [m]",
     ]
     DRY_CRUST_THICKNESS = [
         "DRY_CRUST_THICKNESS",
@@ -287,7 +287,7 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
             self.EXCAVATION_DEPTH[0],
             self.tr(f"{self.EXCAVATION_DEPTH[1]}"),
             QgsProcessingParameterNumber.Double,
-            defaultValue=0,
+            defaultValue=10,
             minValue=0,
         )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
@@ -323,23 +323,25 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         )
         self.addParameter(param)
 
-        param = QgsProcessingParameterEnum(
-            self.POREPRESSURE_ENUM[0],
-            self.tr(f"{self.POREPRESSURE_ENUM[1]}"),
-            self.enum_porepressure,
-            defaultValue=1,
-            allowMultiple=False,
-        )
-        param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
-        self.addParameter(param)
+        # param = QgsProcessingParameterEnum(
+        #     self.POREPRESSURE_ENUM[0],
+        #     self.tr(f"{self.POREPRESSURE_ENUM[1]}"),
+        #     self.enum_porepressure,
+        #     defaultValue=1,
+        #     allowMultiple=False,
+        # )
+        # param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
+        # self.addParameter(param)
+        
         param = QgsProcessingParameterNumber(
-            self.POREPRESSURE_REDUCTION[0],
-            self.tr(f"{self.POREPRESSURE_REDUCTION[1]}"),
-            defaultValue=50,
+            self.POREWP_REDUCTION_M[0],
+            self.tr(f"{self.POREWP_REDUCTION_M[1]}"),
+            defaultValue=10,
             minValue=0,
         )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
+        
         param = QgsProcessingParameterNumber(
             self.DRY_CRUST_THICKNESS[0],
             self.tr(f"{self.DRY_CRUST_THICKNESS[1]}"),
@@ -661,10 +663,10 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
                 )
                 return {}
 
-            porepressure_index = self.parameterAsEnum(
-                parameters, self.POREPRESSURE_ENUM[0], context
-            )
-            pw_reduction_curve = self.enum_porepressure[porepressure_index]
+            # porepressure_index = self.parameterAsEnum(
+            #     parameters, self.POREPRESSURE_ENUM[0], context
+            # )
+            # pw_reduction_curve = self.enum_porepressure[porepressure_index]
             dry_crust_thk = self.parameterAsDouble(
                 parameters, self.DRY_CRUST_THICKNESS[0], context
             )
@@ -675,8 +677,8 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
                 parameters, self.SOIL_DENSITY[0], context
             )
             ocr_value = self.parameterAsDouble(parameters, self.OCR[0], context)
-            porewp_red = self.parameterAsInt(
-                parameters, self.POREPRESSURE_REDUCTION[0], context
+            porewp_red_m = self.parameterAsInt(
+                parameters, self.POREWP_REDUCTION_M[0], context
             )
             janbu_ref_stress = self.parameterAsInt(
                 parameters, self.JANBU_REF_STRESS[0], context
@@ -693,12 +695,12 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
 
         else:
             path_source_raster_rock_surface = None
-            pw_reduction_curve = None
+            # pw_reduction_curve = None
             dry_crust_thk = None
             dep_groundwater = None
             density_sat = None
             ocr_value = None
-            porewp_red = None
+            porewp_red_m = None
             janbu_ref_stress = None
             janbu_const = None
             janbu_m = None
@@ -769,12 +771,12 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
         feedback.pushInfo(
             f"PROCESS - Param: dtb_raster = {path_source_raster_rock_surface}"
         )
-        feedback.pushInfo(f"PROCESS - Param: pw_reduction_curve = {pw_reduction_curve}")
+        # feedback.pushInfo(f"PROCESS - Param: pw_reduction_curve = {pw_reduction_curve}")
         feedback.pushInfo(f"PROCESS - Param: dry_crust_thk = {dry_crust_thk}")
         feedback.pushInfo(f"PROCESS - Param: dep_groundwater = {dep_groundwater}")
         feedback.pushInfo(f"PROCESS - Param: density_sat = {density_sat}")
         feedback.pushInfo(f"PROCESS - Param: OCR = {ocr_value}")
-        feedback.pushInfo(f"PROCESS - Param: porewp_red = {porewp_red}")
+        feedback.pushInfo(f"PROCESS - Param: porewp_red_m = {porewp_red_m}")
         feedback.pushInfo(f"PROCESS - Param: janbu_ref_stress = {janbu_ref_stress}")
         feedback.pushInfo(f"PROCESS - Param: janbu_const = {janbu_const}")
         feedback.pushInfo(f"PROCESS - Param: janbu_m = {janbu_m}")
@@ -797,12 +799,12 @@ class BegrensSkadeExcavation(GvBaseProcessingAlgorithms):
                 short_term_curve=short_term_curve,
                 bLongterm=bLongterm,
                 dtb_raster=str(path_source_raster_rock_surface),
-                pw_reduction_curve=pw_reduction_curve,
+                # pw_reduction_curve=pw_reduction_curve,
                 dry_crust_thk=dry_crust_thk,
                 dep_groundwater=dep_groundwater,
                 density_sat=density_sat,
                 OCR=ocr_value,
-                porewp_red=porewp_red,
+                porewp_red_m=porewp_red_m,
                 janbu_ref_stress=janbu_ref_stress,
                 janbu_const=janbu_const,
                 janbu_m=janbu_m,
