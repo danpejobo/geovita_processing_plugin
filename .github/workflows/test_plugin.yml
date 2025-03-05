@@ -62,10 +62,16 @@ jobs:
         run: |
           docker exec qgis-testing-environment sh -c "touch /tests_directory/$PLUGIN_NAME/REMEDY_GIS_RiskTool/__init__.py"
           docker exec qgis-testing-environment ls -la /tests_directory/$PLUGIN_NAME/REMEDY_GIS_RiskTool  
+  
+      - name: Install and start Xvfb inside Docker container
+        run: |
+          docker exec qgis-testing-environment apt update
+          docker exec qgis-testing-environment apt install -y xvfb
+          docker exec qgis-testing-environment Xvfb :99 -screen 0 1024x768x24 &
 
       - name: Docker run plugin tests
         run: |
-          docker exec qgis-testing-environment sh -c "QT_QPA_PLATFORM=offscreen qgis_testrunner.sh $TESTS_RUN_FUNCTION"
+          docker exec qgis-testing-environment sh -c "export DISPLAY=:99; && qgis_testrunner.sh $TESTS_RUN_FUNCTION"
 
   Check-code-quality:
     runs-on: ubuntu-latest
