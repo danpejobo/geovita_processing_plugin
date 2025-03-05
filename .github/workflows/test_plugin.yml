@@ -33,7 +33,7 @@ jobs:
 
     strategy:
       matrix:
-        docker_tags: [release-3_36, latest]
+        docker_tags: [release-3-28, release-3_36, latest]
 
     steps:
 
@@ -45,7 +45,16 @@ jobs:
       - name: Docker pull and create qgis-testing-environment
         run: |
           docker pull "$DOCKER_IMAGE":${{ matrix.docker_tags }}
-          docker run -d -e XDG_RUNTIME_DIR=/tmp/runtime-root --name qgis-testing-environment -v ${{ github.workspace }}:/tests_directory -e DISPLAY=:99 "$DOCKER_IMAGE":${{ matrix.docker_tags }}
+          docker run -d -e XDG_RUNTIME_DIR=/tmp/runtime-root --name qgis-testing-environment -v ${{ github.workspace }}:/tests_directory -e DISPLAY=:99 "$DOCKER_IMAGE":${{ matrix.docker_tags }} tail -f /dev/null
+      
+      - name: Check Docker container status
+        run: docker ps -a
+      
+      - name: Ensure container is running
+        run: |
+          if [ "$(docker inspect -f '{{.State.Running}}' qgis-testing-environment 2>/dev/null)" != "true" ]; then
+            docker start qgis-testing-environment
+          fi
       
       - name: List mounted directory contents
         run: |
