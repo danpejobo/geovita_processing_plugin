@@ -46,24 +46,6 @@ jobs:
         run: |
           docker pull "$DOCKER_IMAGE":${{ matrix.docker_tags }}
           docker run -d -e XDG_RUNTIME_DIR=/tmp/runtime-root --name qgis-testing-environment -v ${{ github.workspace }}:/tests_directory -e DISPLAY=:99 "$DOCKER_IMAGE":${{ matrix.docker_tags }} tail -f /dev/null
-      
-      - name: Check Docker container status
-        run: docker ps -a
-      
-      - name: Ensure container is running
-        run: |
-          if [ "$(docker inspect -f '{{.State.Running}}' qgis-testing-environment 2>/dev/null)" != "true" ]; then
-            docker start qgis-testing-environment
-          fi
-      
-      - name: List mounted directory contents
-        run: |
-          docker exec qgis-testing-environment ls -la /tests_directory
-          docker exec qgis-testing-environment ls -la /tests_directory/$PLUGIN_NAME
-      
-      - name: List possible locations of qgis_setup.sh
-        run: |
-          docker exec qgis-testing-environment sh -c "find / -name qgis_setup.sh 2>/dev/null"
 
       - name: Docker set up QGIS
         run: |
@@ -83,7 +65,7 @@ jobs:
 
       - name: Docker run plugin tests
         run: |
-          docker exec qgis-testing-environment sh -c "qgis_testrunner.sh $TESTS_RUN_FUNCTION"
+          docker exec qgis-testing-environment sh -c "QT_QPA_PLATFORM=offscreen qgis_testrunner.sh $TESTS_RUN_FUNCTION"
 
   Check-code-quality:
     runs-on: ubuntu-latest
