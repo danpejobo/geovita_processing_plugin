@@ -60,6 +60,10 @@ jobs:
         run: |
           docker exec qgis-testing-environment ls -la /tests_directory
           docker exec qgis-testing-environment ls -la /tests_directory/$PLUGIN_NAME
+      
+      - name: List possible locations of qgis_setup.sh
+        run: |
+          docker exec qgis-testing-environment sh -c "find / -name qgis_setup.sh 2>/dev/null"
 
       - name: Docker set up QGIS
         run: |
