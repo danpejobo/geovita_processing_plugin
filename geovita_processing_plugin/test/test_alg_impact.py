@@ -105,8 +105,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
             "EXCAVATION_DEPTH": 10.0,
             "SETTLEMENT_ENUM": 1,  # index
             "CLIPPING_RANGE": 150,
-            "POREPRESSURE_ENUM": 1,  # index
-            "POREPRESSURE_REDUCTION": 50,
+            "POREWP_REDUCTION_M": 50,
             "DRY_CRUST_THICKNESS": 5.0,
             "DEPTH_GROUNDWATER": 3,
             "SOIL_DENSITY": 18.5,

@@ -200,12 +200,7 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         "CLIPPING_RANGE",
         "Clip distance in case of high resolution (buffer distance in [meters])",
     ]
-    # POREPRESSURE_ENUM = ["POREPRESSURE_ENUM", "Pore pressure reduction curves"]
-    # enum_porepressure = [
-    #     "Lav poretrykksreduksjon",
-    #     "Middels poretrykksreduksjon",
-    #     "Høy poretrykksreduksjon",
-    # ]
+
     POREWP_REDUCTION_M = ["POREWP_REDUCTION_M", "Porewater pressure reduction [m]"]
     DRY_CRUST_THICKNESS = [
         "DRY_CRUST_THICKNESS",

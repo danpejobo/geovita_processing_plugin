@@ -121,8 +121,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
             "SETTLEMENT_ENUM": 1,  # index
             "LONG_TERM_SETTLEMENT": True,
             "RASTER_ROCK_SURFACE": self.raster_rock_surface_layer,
-            "POREPRESSURE_ENUM": 1,  # index
-            "POREPRESSURE_REDUCTION": 50,
+            "POREWP_REDUCTION_M": 10,
             "DRY_CRUST_THICKNESS": 5.0,
             "DEPTH_GROUNDWATER": 3,
             "SOIL_DENSITY": 18.5,

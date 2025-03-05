@@ -33,7 +33,7 @@ jobs:
 
     strategy:
       matrix:
-        docker_tags: [release-3_28, latest]
+        docker_tags: [release-3_36, latest]
 
     steps:
 
