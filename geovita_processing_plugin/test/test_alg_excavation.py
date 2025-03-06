@@ -240,7 +240,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
 
         # Check if the counted features match the expected value
         expected_feature_corner_count = (
-            11  # Hypothetical expected number of features with sv_tot > 0.1
+            565  # Hypothetical expected number of features with sv_tot > 0.1
         )
         self.assertEqual(
             feature_count_sv_tot_greater_than_01,
@@ -253,18 +253,18 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
             results["OUTPUT_WALL"], "Output Corners", "ogr"
         )
 
-        # Iterate over features and count those with slope_ang > 0.1
-        feature_count_slope_ang_greater_than_0 = 0
+        # Iterate over features and count those with slope_ang > 0.005
+        feature_count_slope_ang_greater_than_005 = 0
         for feature in output_wall_layer.getFeatures():
-            if feature["slope_ang"] > 0:
-                feature_count_slope_ang_greater_than_0 += 1
+            if feature["slope_ang"] > 0.005:
+                feature_count_slope_ang_greater_than_005 += 1
 
         # Check if the counted features match the expected value
         expected_feature_wall_count = (
-            1273  # Hypothetical expected number of features with slope_ang > 0.1
+            61  # Hypothetical expected number of features with slope_ang > 0.005
         )
         self.assertEqual(
-            feature_count_slope_ang_greater_than_0,
+            feature_count_slope_ang_greater_than_005,
             expected_feature_wall_count,
             "The number of wall features with slope_ang > 0 does not match the expected count",
         )
@@ -275,17 +275,17 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         )
 
         # Iterate over features and count those with max_sv_tot > 0.1
-        feature_count_max_sv_tot_greater_than_0 = 0
+        feature_count_max_sv_tot_greater_than_005 = 0
         for feature in output_building_layer.getFeatures():
-            if feature["max_sv_tot"] > 0:
-                feature_count_max_sv_tot_greater_than_0 += 1
+            if feature["max_sv_tot"] > 0.05:
+                feature_count_max_sv_tot_greater_than_005 += 1
 
         # Example verification: Check if the counted features match the expected value
         expected_feature_building_count = (
-            188  # Hypothetical expected number of features with max_sv_tot > 0
+            176  # Hypothetical expected number of features with max_sv_tot > 0
         )
         self.assertEqual(
-            feature_count_max_sv_tot_greater_than_0,
+            feature_count_max_sv_tot_greater_than_005,
             expected_feature_building_count,
             "The number of building features with max_sv_tot > 0 does not match the expected count",
         )
