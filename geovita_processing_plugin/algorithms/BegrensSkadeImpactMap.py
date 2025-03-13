@@ -45,13 +45,15 @@ from qgis.core import (
     QgsProcessingParameterDefinition,
     QgsProcessingParameterRasterLayer,
     QgsMessageLog,
+    QgsProcessingOutputFile,
+    QgsRasterLayer
 )
 
 import traceback
+from datetime import datetime
 from pathlib import Path
 
 from .base_algorithm import GvBaseProcessingAlgorithms
-from ..utilities.AddLayersTask import AddLayersTask
 from ..utilities.gui import GuiUtils
 from ..utilities.logger import CustomLogger
 from ..utilities.methodslib import (
@@ -116,7 +118,6 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         self.feature_name = None  # Default value
         self.layers_info = {}
         self.styles_dir_path = Path()
-        self.add_layers_task = AddLayersTask()
         self.logger.info("__INIT__ - Finished initialize BegrensSkadeImpactMap ")
 
     def name(self):
@@ -200,13 +201,8 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         "CLIPPING_RANGE",
         "Clip distance in case of high resolution (buffer distance in [meters])",
     ]
-    POREPRESSURE_ENUM = ["POREPRESSURE_ENUM", "Pore pressure reduction curves"]
-    enum_porepressure = [
-        "Lav poretrykksreduksjon",
-        "Middels poretrykksreduksjon",
-        "Høy poretrykksreduksjon",
-    ]
-    POREPRESSURE_REDUCTION = ["POREPRESSURE_REDUCTION", "Porepressure reduction [kPa]"]
+
+    POREWP_REDUCTION_M = ["POREWP_REDUCTION_M", "Porewater pressure reduction [m]"]
     DRY_CRUST_THICKNESS = [
         "DRY_CRUST_THICKNESS",
         "Thickness of overburden not affected by porewater drawdown [m]",
@@ -241,14 +237,6 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
             defaultValue=None,
         )
         self.addParameter(param)
-
-        # DEFINE OUTPUTS
-        # We add a outputs to store our processed features
-        # self.addParameter(QgsProcessingParameterRasterDestination(
-        #     self.OUTPUT_RASTER,
-        #     self.tr("Output Raster")
-        #     )
-        # )
 
         self.addParameter(
             QgsProcessingParameterString(
@@ -313,19 +301,11 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
-        param = QgsProcessingParameterEnum(
-            self.POREPRESSURE_ENUM[0],
-            self.tr(f"{self.POREPRESSURE_ENUM[1]}"),
-            self.enum_porepressure,
-            defaultValue=1,
-            allowMultiple=False,
-        )
-        param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
-        self.addParameter(param)
+        
         param = QgsProcessingParameterNumber(
-            self.POREPRESSURE_REDUCTION[0],
-            self.tr(f"{self.POREPRESSURE_REDUCTION[1]}"),
-            defaultValue=50,
+            self.POREWP_REDUCTION_M[0],
+            self.tr(f"{self.POREWP_REDUCTION_M[1]}"),
+            defaultValue=10,
             minValue=0,
         )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
@@ -396,6 +376,14 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         )
         param.setFlags(QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
+        
+        # We add the output definition
+        self.addOutput(
+            QgsProcessingOutputFile(
+                self.OUTPUT_RASTER,
+                self.tr("Output Raster impact map"),
+            )
+        )
 
     def processAlgorithm(self, parameters, context, feedback):
         """
@@ -421,13 +409,11 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         clipping_range = self.parameterAsInt(
             parameters, self.CLIPPING_RANGE[0], context
         )
-        porepressure_index = self.parameterAsEnum(
-            parameters, self.POREPRESSURE_ENUM[0], context
-        )
+
         output_resolution = self.parameterAsDouble(
             parameters, self.OUTPUT_RESOLUTION[0], context
         )
-        pw_reduction_curve = self.enum_porepressure[porepressure_index]
+
         dry_crust_thk = self.parameterAsDouble(
             parameters, self.DRY_CRUST_THICKNESS[0], context
         )
@@ -436,8 +422,8 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         )
         density_sat = self.parameterAsDouble(parameters, self.SOIL_DENSITY[0], context)
         ocr_value = self.parameterAsDouble(parameters, self.OCR[0], context)
-        porewp_red = self.parameterAsInt(
-            parameters, self.POREPRESSURE_REDUCTION[0], context
+        porewp_red_m = self.parameterAsInt(
+            parameters, self.POREWP_REDUCTION_M[0], context
         )
         janbu_ref_stress = self.parameterAsInt(
             parameters, self.JANBU_REF_STRESS[0], context
@@ -579,12 +565,11 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
         feedback.pushInfo(f"PROCESS - PARAM CALCULATION_RANGE: {clipping_range}")
         feedback.pushInfo(f"PROCESS - PARAM output_proj: {output_srid}")
         feedback.pushInfo(f"PROCESS - PARAM dtb_raster: {str(path_processed_raster)}")
-        feedback.pushInfo(f"PROCESS - PARAM pw_reduction_curve: {pw_reduction_curve}")
         feedback.pushInfo(f"PROCESS - PARAM dry_crust_thk: {dry_crust_thk}")
         feedback.pushInfo(f"PROCESS - PARAM dep_groundwater: {dep_groundwater}")
         feedback.pushInfo(f"PROCESS - PARAM density_sat: {density_sat}")
         feedback.pushInfo(f"PROCESS - PARAM OCR: {ocr_value}")
-        feedback.pushInfo(f"PROCESS - PARAM porewp_red: {porewp_red}")
+        feedback.pushInfo(f"PROCESS - PARAM porewp_red_m: {porewp_red_m}")
         feedback.pushInfo(f"PROCESS - PARAM janbu_ref_stress: {janbu_ref_stress}")
         feedback.pushInfo(f"PROCESS - PARAM janbu_const: {janbu_const}")
         feedback.pushInfo(f"PROCESS - PARAM janbu_m: {janbu_m}")
@@ -604,12 +589,11 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
                 CALCULATION_RANGE=clipping_range,  # '380' hardcoded constant used in the underlying submodule's method.
                 output_proj=output_srid,
                 dtb_raster=str(path_processed_raster),
-                pw_reduction_curve=pw_reduction_curve,
                 dry_crust_thk=dry_crust_thk,
                 dep_groundwater=dep_groundwater,
                 density_sat=density_sat,
                 OCR=ocr_value,
-                porewp_red=porewp_red,
+                porewp_red_m=porewp_red_m,
                 janbu_ref_stress=janbu_ref_stress,
                 janbu_const=janbu_const,
                 janbu_m=janbu_m,
@@ -642,49 +626,62 @@ class BegrensSkadeImpactMap(GvBaseProcessingAlgorithms):
             }
         }
 
-        feedback.setProgress(90)
+        feedback.setProgress(100)
         feedback.pushInfo("PROCESS - Finished processing!")
         # Return the results of the algorithm.
-        return {self.OUTPUT_FOLDER: output_raster_path}
+        return {self.OUTPUT_RASTER: output_raster_path}
 
     def postProcessAlgorithm(self, context, feedback):
         """
-        Handles the post-processing steps of the algorithm, specifically adding output layers to the QGIS project.
-
-        This method creates and executes a process to add layers to the QGIS interface, applying predefined styles 
-        and organizing them within a specified group. It leverages the `AddLayersTask` class to manage layer 
-        addition in a way that ensures thread safety and proper GUI updates.
-
-        Parameters:
-        - context (QgsProcessingContext): The context of the processing, providing access to the QGIS project and other relevant settings.
-        - feedback (QgsProcessingFeedback): The object used to report progress and log messages back to the user.
-
-        Returns:
-        - dict: An empty dictionary. This method does not produce output parameters but instead focuses on the side effect of adding layers to the project.
-
-        Note:
-        This method sets up a task for layer addition, defining success and failure callbacks to provide user feedback. 
-        It manually starts the process and handles its completion.
+        After processAlgorithm finishes, load the produced raster (output_raster_path),
+        apply a QML style, and place it into a custom group in the TOC.
         """
-        ######### EXPERIMENTAL ADD LAYERS TO GUI #########
-        # Create the task
-        self.add_layers_task.setParameters(
-            self.layers_info, self.feature_name, self.styles_dir_path, self.logger
-        )
+        project = context.project()
+        root = project.layerTreeRoot()
 
-        # Define a slot to handle the task completion
-        def onTaskCompleted(success):
-            if success:
-                feedback.pushInfo("POSTPROCESS - Layers added successfully.")
-                feedback.setProgress(100)
+        # 1) Define or find the group at the top level
+        group_name = self.feature_name
+        group = root.findGroup(group_name)
+        if not group:
+            group = root.insertGroup(0, group_name)
+
+        # The self.layers_info just have one key: "IMPACT-MAP",
+        #    but let's loop in case there are added more raster layers in future
+        for layer_label, layer_info in self.layers_info.items():
+            raster_path = layer_info["shape_path"]
+            style_name = layer_info["style_name"]
+            style_path = self.styles_dir_path / style_name
+
+            # Build a unique name with timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+            final_layer_name = f"{layer_label}_{timestamp}"
+
+            # Create a QgsRasterLayer
+            # Use "gdal" or an appropriate provider for your raster format
+            raster_layer = QgsRasterLayer(raster_path, final_layer_name, "gdal")
+            if not raster_layer.isValid():
+                feedback.reportError(f"Invalid raster layer from file: {raster_path}")
+                continue
+
+            # Attempt to load a QML style (if it references valid raster symbology)
+            if style_path.is_file():
+                raster_layer.loadNamedStyle(str(style_path))
+                raster_layer.triggerRepaint()
             else:
-                feedback.reportError("POSTPROCESS - Failed to add layers.")
-                feedback.setProgress(100)
+                feedback.reportError(f"Style file not found: {style_path}")
 
-        # Connect the task's completed signal to the slot
-        self.add_layers_task.taskCompleted.connect(onTaskCompleted)
+            # Add the layer to the project, but do *not* place it in the root
+            QgsProject.instance().addMapLayer(raster_layer, False)
 
-        # Start the task
-        success = self.add_layers_task.run()
-        self.add_layers_task.finished(success)
+            # Insert it in our custom group
+            group.insertLayer(0, raster_layer)
+
+            # Make sure it's visible
+            node = group.findLayer(raster_layer.id())
+            if node:
+                node.setItemVisibilityChecked(True)
+
+            feedback.pushInfo(f"Loaded and styled raster layer '{final_layer_name}' in group '{group_name}'.")
+
+        feedback.pushInfo("postProcessAlgorithm complete.")
         return {}

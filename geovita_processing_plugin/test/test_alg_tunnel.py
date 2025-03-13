@@ -110,7 +110,7 @@ class TestBegrensSkadeTunnel(unittest.TestCase):
             "RASTER_ROCK_SURFACE": self.raster_rock_surface_layer,
             "POREPRESSURE_ENUM": 1,  # index
             "TUNNEL_LEAKAGE": 10,
-            "POREPRESSURE_REDUCTION": 50,  # only used if POREPRESSURE_ENUM = 3
+            "POREWP_REDUCTION_M": 10,  # only used if POREPRESSURE_ENUM = 3
             "DRY_CRUST_THICKNESS": 5.0,
             "DEPTH_GROUNDWATER": 3,
             "SOIL_DENSITY": 18.5,
