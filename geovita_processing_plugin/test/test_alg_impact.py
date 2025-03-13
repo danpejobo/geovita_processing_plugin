@@ -155,11 +155,11 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
 
         # Verify results
         # For example, check if output shapefiles exist
-        self.assertTrue(Path(results["OUTPUT_FOLDER"]).exists())
+        self.assertTrue(Path(results["OUTPUT_RASTER"]).exists())
 
         # Further checks can include verifying the contents of the output shapefiles
         # Load the raster and perform additional checks
-        output_raster = QgsRasterLayer(results["OUTPUT_FOLDER"], "Output Raster")
+        output_raster = QgsRasterLayer(results["OUTPUT_RASTER"], "Output Raster")
         self.assertTrue(output_raster.isValid(), "Output raster layer is not valid.")
 
     def test_algorithm_exec_long(self):
@@ -177,7 +177,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
 
         # Verify results
         # For example, check if output shapefiles exist
-        self.assertTrue(Path(results["OUTPUT_FOLDER"]).exists())
+        self.assertTrue(Path(results["OUTPUT_RASTER"]).exists())
 
         # Further checks can include verifying the contents of the output shapefiles
 
@@ -195,7 +195,7 @@ class TestBegrensSkadeExcavation(unittest.TestCase):
         )
 
         # Load the output layer for verification
-        output_layer = QgsRasterLayer(results["OUTPUT_FOLDER"], "Output Corners")
+        output_layer = QgsRasterLayer(results["OUTPUT_RASTER"], "Output Corners")
 
         for point_name, (x, y, expected_value) in self.test_points.items():
             point = QgsPointXY(x, y)
