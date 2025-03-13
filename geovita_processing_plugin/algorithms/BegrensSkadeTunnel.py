@@ -46,16 +46,18 @@ from qgis.core import (
     QgsProcessingParameterEnum,
     QgsProcessingParameterField,
     QgsProcessingParameterRasterLayer,
+    QgsProcessingOutputFile,
+    QgsVectorLayer
 )
 
 from .base_algorithm import GvBaseProcessingAlgorithms
 
 import traceback
 from pathlib import Path
+from datetime import datetime
 
 from ..REMEDY_GIS_RiskTool.BegrensSkade import mainBegrensSkade_Tunnel
 
-from ..utilities.AddLayersTask import AddLayersTask
 from ..utilities.gui import GuiUtils
 from ..utilities.logger import CustomLogger
 from ..utilities.methodslib import (
@@ -117,7 +119,6 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
         self.feature_name = None  # Default value
         self.layers_info = {}
         self.styles_dir_path = Path()
-        self.add_layers_task = AddLayersTask()
         self.logger.info("__INIT__ - Finished initialize BegrensSkadeTunnel ")
 
     def name(self):
@@ -498,6 +499,24 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                 self.tr("Output Folder"),
             )
         )
+        self.addOutput(
+            QgsProcessingOutputFile(
+                self.OUTPUT_BUILDING,
+                self.tr("Output Buildings Shapefile"),
+            )
+        )
+        self.addOutput(
+            QgsProcessingOutputFile(
+                self.OUTPUT_WALL,
+                self.tr("Output Walls Shapefile"),
+            )
+        )
+        self.addOutput(
+            QgsProcessingOutputFile(
+                self.OUTPUT_CORNER,
+                self.tr("Output Corners Shapefile"),
+            )
+        )
 
         self.logger.info("initAlgorithm - Done setting up the inputs.")
 
@@ -719,7 +738,7 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
 
         else:
             porewp_calc_type = None
-            porewp_red_at_site_m = None
+            porewp_red_at_site_m = 0
             tunnel_leakage = None
             path_source_raster_rock_surface = None
             dry_crust_thk = None
@@ -872,30 +891,30 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
                 "shape_path": output_shapefiles[1],
                 "style_name": "WALL-ANGLE.qml",
             },
-            "TUNNEL_BUILDING-TOTAL-SETTLMENT": {
-                "shape_path": output_shapefiles[0],
-                "style_name": "BUILDING-TOTAL-SETTLMENT_sv_tot.qml",
-            },
             "TUNNEL_BUILDING-TOTAL-ANGLE": {
                 "shape_path": output_shapefiles[0],
                 "style_name": "BUILDING-TOTAL-ANGLE_max_angle.qml",
             },
+            "TUNNEL_BUILDING-TOTAL-SETTLMENT": {
+                "shape_path": output_shapefiles[0],
+                "style_name": "BUILDING-TOTAL-SETTLMENT_sv_tot.qml",
+            }
         }
         if bVulnerability:
             self.layers_info.update(
                 {
-                    "TUNNEL_BUILDING-RISK-SETTLMENT": {
-                        "shape_path": output_shapefiles[0],
-                        "style_name": "BUILDING-TOTAL-RISK-SELLMENT_risk_tots.qml",
-                    },
                     "TUNNEL_BUILDING-RISK-ANGLE": {
                         "shape_path": output_shapefiles[0],
                         "style_name": "BUILDING-TOTAL-RISK-ANGLE_risk_angle.qml",
                     },
+                    "TUNNEL_BUILDING-RISK-SETTLMENT": {
+                        "shape_path": output_shapefiles[0],
+                        "style_name": "BUILDING-TOTAL-RISK-SELLMENT_risk_tots.qml",
+                    }
                 }
             )
 
-        feedback.setProgress(90)
+        feedback.setProgress(100)
         feedback.pushInfo("PROCESS - Finished processing!")
         # Return the results of the algorithm.
         return {
@@ -903,45 +922,58 @@ class BegrensSkadeTunnel(GvBaseProcessingAlgorithms):
             self.OUTPUT_WALL: output_shapefiles[1],
             self.OUTPUT_CORNER: output_shapefiles[2],
         }
-
+    
+    
     def postProcessAlgorithm(self, context, feedback):
         """
-        Handles the post-processing steps of the algorithm, specifically adding output layers to the QGIS project.
-
-        This method creates and executes a process to add layers to the QGIS interface, applying predefined styles
-        and organizing them within a specified group. It leverages the `AddLayersTask` class to manage layer
-        addition in a way that ensures thread safety and proper GUI updates.
-
-        Parameters:
-        - context (QgsProcessingContext): The context of the processing, providing access to the QGIS project and other relevant settings.
-        - feedback (QgsProcessingFeedback): The object used to report progress and log messages back to the user.
-
-        Returns:
-        - dict: An empty dictionary. This method does not produce output parameters but instead focuses on the side effect of adding layers to the project.
-
-        Note:
-        This method sets up a task for layer addition, defining success and failure callbacks to provide user feedback.
-        It manually starts the process and handles its completion.
+        This method is called after processAlgorithm finishes.
+        Here, we manually load the output shapefiles, apply QML styles,
+        and place them under a custom group in the layer tree.
         """
-        ######### EXPERIMENTAL ADD LAYERS TO GUI #########
-        # Create the task
-        self.add_layers_task.setParameters(
-            self.layers_info, self.feature_name, self.styles_dir_path, self.logger
-        )
+        project = context.project()
+        root = project.layerTreeRoot()
 
-        # Define a slot to handle the task completion
-        def onTaskCompleted(success):
-            if success:
-                feedback.pushInfo("POSTPROCESS - Layers added successfully.")
-                feedback.setProgress(100)
+        # Create (or find) a group at the top level named by 'self.feature_name'.
+        group_name = self.feature_name
+        group = root.findGroup(group_name)
+        if not group:
+            group = root.insertGroup(0, group_name)
+
+        # 2) Loop through the entries stored in 'self.layers_info' defined during processAlgorithm
+        for layer_label, layer_info in self.layers_info.items():
+            shape_path = layer_info["shape_path"]    # e.g. "C:/somefolder/buildings.shp"
+            style_name = layer_info["style_name"]    # e.g. "BUILDING-TOTAL-SETTLMENT_sv_tot.qml"
+
+            # Generate a unique layer name with timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+            final_layer_name = f"{layer_label}_{timestamp}"
+
+            # Create the QgsVectorLayer from the file path
+            layer = QgsVectorLayer(shape_path, final_layer_name, "ogr")
+            if not layer.isValid():
+                feedback.reportError(f"Could not load layer from file: {shape_path}")
+                continue
+
+            # Load the QML style if it exists
+            style_path = self.styles_dir_path / style_name  # e.g. /path/to/styles/BUILDING-TOTAL-SETTLMENT_sv_tot.qml
+            if style_path.is_file():
+                layer.loadNamedStyle(str(style_path))
+                layer.triggerRepaint()
             else:
-                feedback.reportError("POSTPROCESS - Failed to add layers.")
-                feedback.setProgress(100)
+                feedback.reportError(f"Style file not found: {style_path}")
 
-        # Connect the task's completed signal to the slot
-        self.add_layers_task.taskCompleted.connect(onTaskCompleted)
+            # Add the layer to the project (layer registry) *without* adding to the root TOC
+            QgsProject.instance().addMapLayer(layer, False)
 
-        # Start the task
-        success = self.add_layers_task.run()
-        self.add_layers_task.finished(success)
+            # Place the layer under the group at the bottom
+            group.insertLayer(-1, layer)
+
+            # Ensure the new layer node is visible
+            node = group.findLayer(layer.id())
+            if node:
+                node.setItemVisibilityChecked(True)
+
+            feedback.pushInfo(f"Loaded and styled layer '{final_layer_name}' in group '{group_name}'.")
+
+        feedback.pushInfo("postProcessAlgorithm complete.")
         return {}
