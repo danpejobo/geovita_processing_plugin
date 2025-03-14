@@ -1,6 +1,12 @@
+Introduction
+=====
+Processing providers and algorithms overview
+
 Status and Limitations
 =====
 - [REMEDY GIS RiskTool](https://github.com/norwegian-geotechnical-institute/REMEDY_GIS_RiskTool)
+  - REMEDY_GIS_RiskTool is an open-source GIS-based tool using the GIBV method to quantify building damage risks from deep excavation, analyzing settlements due to wall deformation and groundwater drawdown, developed under the REMEDY/Begrens Skade 2 research project (2017–2022).
+  
   - It is important to read the manual for this project. Especially if you want to perform `vulnerability analysis`. This will require you to edit the polygon layers containing the `building` features (see specifications section below).
   - Supported filetypes: `.shp` `.tif` `.tiff`
     - If you have an "in memory" layer or other fileformats you will need to save it to a `.shp` file. This is a restriction imposed by the underlaying submodule.
@@ -10,9 +16,9 @@ Status and Limitations
 Tools
 =====
 - **REMEDY GIS RiskTool** - These algorithms create a log directory in this location `%user%/Downloads/REMEDY`. For the moment this is hardcoded.
-  - `Begrens Skade - Excavation` The Begrens Skade - Excavation algorithm provides a comprehensive analysis of building settlements and risks associated with subsidence and inclination.
-  - `Begrens Skade - ImpactMap` The BegrensSkade ImpactMap alorithm calculates both short-term and long-term settlements that occur due to the establishment of a construction pit (this alg. takes a bit of time to run, open the log and refresh it to see the logged progress).
-  - `Begrens Skade - Tunnel` The BegrensSkade Tunnel alorithm provides a comprehensive analysis of building settlements and risks associated with subsidence and inclination due to tunnel excavation.
+  - `Begrens Skade - Excavation` Analyzes building settlement risks in soft clays caused by deep excavation wall deformation, using the GIBV method to calculate vertical greenfield settlements based on empirical data from retaining wall behavior (developed under the REMEDY/Begrens Skade 2 project).
+  - `Begrens Skade - ImpactMap` Quantifies short- and long-term consolidation settlements from groundwater drawdown during construction pit establishment, employing the GIBV method and empirical datasets to model spatiotemporal risk distribution in soft clays (part of the NFR-funded REMEDY initiative).
+  - `Begrens Skade - Tunnel` Evaluates subsidence and inclination risks in buildings adjacent to tunnel excavations, leveraging the GIBV framework to predict settlements induced by tunneling activities in soft clay environments (developed through the REMEDY/Begrens Skade 2 research collaboration).
 
 Specifications
 ==============

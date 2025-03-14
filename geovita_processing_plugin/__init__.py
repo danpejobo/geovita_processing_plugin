@@ -26,7 +26,7 @@ __author__ = 'DPE'
 __date__ = '2024-01-17'
 __copyright__ = '(C) 2024 by DPE'
 
-__version__ = "3.2.0"
+__version__ = "3.2.1"
 
 import sys
 from pathlib import Path

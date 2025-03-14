@@ -6,17 +6,20 @@
 name=Geovita GIS Processing provider
 qgisMinimumVersion=3.28
 qgisMaximumVersion=3.99
-description=This plugin adds different Geovita custom processing algorithms to QGIS
-version=3.2.0
+description=Aims to bring different Geovita custom geological and geotechnical processing algorithms to QGIS
+version=3.2.1
 author=DPE
 email=dpe@geovita.no
 
-about=Geovita plugin provider. This plugin enables different processing algorithms and is under development.
+about=Geovita plugin provider. This plugin enables different geological and geotechnical algorithms to QGIS, and is under development.
 
 	Now it implements NGI's REMEDY_GIS_RiskTool to QGIS:
-	* Begrens Skade - Excavation: The Begrens Skade - Excavation algorithm provides a comprehensive analysis of building settlements and risks associated with subsidence and inclination.
-	* Begrens Skade - ImpactMap: The BegrensSkade ImpactMap alorithm calculates both short-term and long-term settlements that occur due to the establishment of a construction pit (this alg. takes a bit of time to run, open the log and refresh it to see the logged progress).
-	* Begrens Skade - Tunnel: The BegrensSkade Tunnel alorithm provides a comprehensive analysis of building settlements and risks associated with subsidence and inclination due to tunnel excavation.
+
+	* REMEDY_GIS_RiskTool is an open-source GIS-based tool using the GIBV method to quantify building damage risks from deep excavation, analyzing settlements due to wall deformation and groundwater drawdown, developed under the REMEDY/Begrens Skade 2 research project (2017–2022).
+
+	* Begrens Skade - Excavation: Analyzes building settlement risks in soft clays caused by deep excavation wall deformation, using the GIBV method to calculate vertical greenfield settlements based on empirical data from retaining wall behavior (developed under the REMEDY/Begrens Skade 2 project).
+	* Begrens Skade - ImpactMap: Quantifies short- and long-term consolidation settlements from groundwater drawdown during construction pit establishment, employing the GIBV method and empirical datasets to model spatiotemporal risk distribution in soft clays (part of the NFR-funded REMEDY initiative).
+	* Begrens Skade - Tunnel: Evaluates subsidence and inclination risks in buildings adjacent to tunnel excavations, leveraging the GIBV framework to predict settlements induced by tunneling activities in soft clay environments (developed through the REMEDY/Begrens Skade 2 research collaboration).
 
 	- File bug-reports here: https://github.com/danpejobo/geovita_processing_plugin/issues
 
@@ -27,9 +30,13 @@ repository=https://github.com/danpejobo/geovita_processing_plugin
 # Recommended items:
 
 hasProcessingProvider=yes
+
 # Uncomment the following line and add your changelog:
-changelog=v.3.2.0 (13.03.2025)
-	- Uppdate submodule to newest upstream.
+changelog=v.3.2.1 (14.03.2025)
+	- Update metadata and descriptions
+
+	v.3.2.0 (13.03.2025)
+	- Update submodule to newest upstream.
 	- Rewrite logic for adding and styling layers. Now uses postProcessing. Results should be added to TOC, and visible on the canvas
 
 	v.3.1.1 (04.03.2024)
@@ -66,10 +73,10 @@ changelog=v.3.2.0 (13.03.2025)
 	- Initial "release" of the QGIS implementation of NGI's REMEDY_GIS_RiskTool
 
 # Tags are comma separated with spaces allowed
-tags=analysis, attribute edit, csv, database, delimitation, digitizing, export, import, point, processing, table, vector, NGI, BegrensSkade, remedy, building, settlements, tunnel, impactmap, excavation, risk, dtm
+tags=geotechnical engineering, geology, geotechnical analysis, soil mechanics, ground deformation, subsidence, consolidation, settlements, excavation, tunnel engineering, geohazards, infrastructure risk, GIBV method, soft clays, groundwater drawdown, DTM, NGI, BegrensSkade, REMEDY, impactmap, geotechnical modeling, site investigation, slope stability, soil-structure interaction
 
 homepage=https://github.com/danpejobo/geovita_processing_plugin
-category=Analysis
+category=Vector
 icon=icons/geovita.ico
 # experimental flag
 experimental=False
