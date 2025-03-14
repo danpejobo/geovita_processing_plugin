@@ -6,7 +6,7 @@
 name=Geovita GIS Processing provider
 qgisMinimumVersion=3.28
 qgisMaximumVersion=3.99
-description=Aim to brings different Geovita custom geological and geotechnical processing algorithms to QGIS
+description=Aims to bring different Geovita custom geological and geotechnical processing algorithms to QGIS
 version=3.2.1
 author=DPE
 email=dpe@geovita.no
