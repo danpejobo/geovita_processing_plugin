@@ -7,7 +7,7 @@ name=Geovita GIS Processing provider
 qgisMinimumVersion=3.28
 qgisMaximumVersion=3.99
 description=Aim to brings different Geovita custom geological and geotechnical processing algorithms to QGIS
-version=3.2.0
+version=3.2.1
 author=DPE
 email=dpe@geovita.no
 
@@ -32,8 +32,11 @@ repository=https://github.com/danpejobo/geovita_processing_plugin
 hasProcessingProvider=yes
 
 # Uncomment the following line and add your changelog:
-changelog=v.3.2.0 (13.03.2025)
-	- Uppdate submodule to newest upstream.
+changelog=v.3.2.1 (14.03.2025)
+	- Update metadata and descriptions
+
+	v.3.2.0 (13.03.2025)
+	- Update submodule to newest upstream.
 	- Rewrite logic for adding and styling layers. Now uses postProcessing. Results should be added to TOC, and visible on the canvas
 
 	v.3.1.1 (04.03.2024)
