@@ -35,7 +35,7 @@ repository=https://github.com/danpejobo/geovita_processing_plugin
 hasProcessingProvider=yes
 
 # Uncomment the following line and add your changelog:
-changelog=v.3.2.1 (14.03.2025)
+changelog=v.3.2.2 (27.10.2025)
 	- Update qgisMaximumVersion to 4.99 to support qgis4 and qt6
 
 	v.3.2.1 (14.03.2025)
