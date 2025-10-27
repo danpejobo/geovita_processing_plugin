@@ -7,10 +7,10 @@ name=Geovita GIS Processing provider
 description=Aims to bring different Geovita custom geological and geotechnical processing algorithms to QGIS
 
 qgisMinimumVersion=3.28
-qgisMaximumVersion=3.99
+qgisMaximumVersion=4.99
 supportsQt6=True
 
-version=3.2.1
+version=3.2.2
 author=DPE
 email=dpe@geovita.no
 
@@ -36,6 +36,9 @@ hasProcessingProvider=yes
 
 # Uncomment the following line and add your changelog:
 changelog=v.3.2.1 (14.03.2025)
+	- Update qgisMaximumVersion to 4.99 to support qgis4 and qt6
+
+	v.3.2.1 (14.03.2025)
 	- Update metadata and descriptions
 
 	v.3.2.0 (13.03.2025)
