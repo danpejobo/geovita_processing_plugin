@@ -20,7 +20,6 @@ on:
 env:
   # plugin name/directory where the code for the plugin is stored
   PLUGIN_NAME: geovita_processing_plugin
-  # TESTS_RUN_FUNCTION er ikke lenger nødvendig med pytest
   # Docker settings
   DOCKER_IMAGE: qgis/qgis
 
@@ -51,7 +50,9 @@ jobs:
           docker exec qgis-testing-environment sh -c "mkdir -p /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/"
           docker exec qgis-testing-environment sh -c "rm -f /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
           docker exec qgis-testing-environment sh -c "ln -s /tests_directory/$PLUGIN_NAME /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
-          docker exec qgis-testing-environment sh -c "pip3 install --break-system-packages -r /tests_directory/REQUIREMENTS_TESTING.txt"
+          
+          # ENDRING HER: Lagt til 'coverage' i installasjonen
+          docker exec qgis-testing-environment sh -c "pip3 install --break-system-packages -r /tests_directory/REQUIREMENTS_TESTING.txt coverage"
           
           docker exec qgis-testing-environment sh -c "ls -l /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/"
           docker exec qgis-testing-environment sh -c "ls -l /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
@@ -63,9 +64,8 @@ jobs:
   
       - name: Docker run plugin tests
         run: |
-          # ENDRING HER: Kjører pytest direkte.
-          # Vi bytter katalog til /tests_directory først, slik at pytest finner testfilene.
-          docker exec qgis-testing-environment sh -c "cd /tests_directory && xvfb-run pytest"
+          # ENDRING HER: Setter PYTHONPATH til å inkludere submodule-mappen før pytest kjøres
+          docker exec qgis-testing-environment sh -c "cd /tests_directory && export PYTHONPATH=$PYTHONPATH:./geovita_processing_plugin/REMEDY_GIS_RiskTool && xvfb-run pytest"
 
   Check-code-quality:
     runs-on: ubuntu-latest
