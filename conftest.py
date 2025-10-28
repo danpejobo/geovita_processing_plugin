@@ -3,6 +3,9 @@ from qgis.core import QgsApplication
 import os
 import sys
 
+# Fortell pytest at den skal laste pytest-qgis-pluginen
+pytest_plugins = "pytest_qgis"
+
 # Legg til prosjekt-roten OG submodule-mappen i sys.path
 # slik at importer som 'import geovita_processing_plugin' og 'import Utils' fungerer
 project_root = os.path.abspath(os.path.dirname(__file__))
@@ -22,7 +25,7 @@ def init_qgis_processing(qgis_app):
         print("Processing Framework Initialized.")
     except ImportError as e:
         print(f"Could not import Processing: {e}")
-        pytest.skip("Failed to import QGIS Processing framework")
+        pytest.skip(f"Failed to import QGIS Processing framework: {e}")
 
     print("Registering Geovita provider...")
     try:
@@ -34,9 +37,10 @@ def init_qgis_processing(qgis_app):
             print(f"Successfully added provider: {provider.id()}")
         else:
             print("Failed to add provider.")
+            pytest.skip("Failed to add Geovita provider")
     except ImportError as e:
         print(f"Could not import Geovita provider: {e}")
-        pytest.skip("Failed to import Geovita provider")
+        pytest.skip(f"Failed to import Geovita provider: {e}")
 
     yield
 
