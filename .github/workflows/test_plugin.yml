@@ -50,11 +50,8 @@ jobs:
       - name: Docker set up QGIS
         run: |
           docker exec qgis-testing-environment sh -c "mkdir -p /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/"
-          
           docker exec qgis-testing-environment sh -c "rm -f /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
           docker exec qgis-testing-environment sh -c "ln -s /tests_directory/$PLUGIN_NAME /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
-          
-          # ENDRING HER: Lagt til --break-system-packages
           docker exec qgis-testing-environment sh -c "pip3 install --break-system-packages -r /tests_directory/REQUIREMENTS_TESTING.txt"
           
           docker exec qgis-testing-environment sh -c "ls -l /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/"
@@ -67,7 +64,8 @@ jobs:
   
       - name: Docker run plugin tests
         run: |
-          docker exec qgis-testing-environment sh -c "xvfb-run qgis_testrunner.sh $TESTS_RUN_FUNCTION"
+          # ENDRING HER: Bruker full sti til qgis_testrunner.sh
+          docker exec qgis-testing-environment sh -c "xvfb-run /usr/bin/qgis_testrunner.sh $TESTS_RUN_FUNCTION"
 
   Check-code-quality:
     runs-on: ubuntu-latest
@@ -84,8 +82,6 @@ jobs:
 
       - name: Install packages
         run: |
-          # Denne pip installen kjører på utsiden (i selve runner-en),
-          # så den trenger IKKE flagget.
           pip install -r REQUIREMENTS_TESTING.txt
           pip install pylint pycodestyle
 
