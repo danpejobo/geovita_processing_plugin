@@ -20,8 +20,7 @@ on:
 env:
   # plugin name/directory where the code for the plugin is stored
   PLUGIN_NAME: geovita_processing_plugin
-  # python notation to test running inside plugin
-  TESTS_RUN_FUNCTION: geovita_processing_plugin.test_suite.test_package
+  # TESTS_RUN_FUNCTION er ikke lenger nødvendig med pytest
   # Docker settings
   DOCKER_IMAGE: qgis/qgis
 
@@ -64,8 +63,9 @@ jobs:
   
       - name: Docker run plugin tests
         run: |
-          # ENDRING HER: Bruker full sti til qgis_testrunner.sh
-          docker exec qgis-testing-environment sh -c "xvfb-run /usr/bin/qgis_testrunner.sh $TESTS_RUN_FUNCTION"
+          # ENDRING HER: Kjører pytest direkte.
+          # Vi bytter katalog til /tests_directory først, slik at pytest finner testfilene.
+          docker exec qgis-testing-environment sh -c "cd /tests_directory && xvfb-run pytest"
 
   Check-code-quality:
     runs-on: ubuntu-latest
