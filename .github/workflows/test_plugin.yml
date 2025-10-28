@@ -49,7 +49,7 @@ jobs:
 
       - name: Docker set up QGIS
         run: |
-          docker exec qgis-testing-environment sh -c "qgis_setup.sh $PLUGIN_NAME"
+          # Fjernet linjen: docker exec qgis-testing-environment sh -c "qgis_setup.sh $PLUGIN_NAME"
           docker exec qgis-testing-environment sh -c "cat /root/.local/share/QGIS/QGIS3/profiles/default/QGIS/QGIS3.ini"
           docker exec qgis-testing-environment sh -c "rm -f /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
           docker exec qgis-testing-environment sh -c "ln -s /tests_directory/$PLUGIN_NAME /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
@@ -63,15 +63,12 @@ jobs:
           docker exec qgis-testing-environment sh -c "touch /tests_directory/$PLUGIN_NAME/REMEDY_GIS_RiskTool/__init__.py"
           docker exec qgis-testing-environment ls -la /tests_directory/$PLUGIN_NAME/REMEDY_GIS_RiskTool  
   
-      - name: Install and start Xvfb inside Docker container
-        run: |
-          docker exec qgis-testing-environment apt update
-          docker exec qgis-testing-environment apt install -y xvfb
-          docker exec qgis-testing-environment Xvfb :99 -screen 0 1024x768x24 &
-
+      # Fjernet steget "Install and start Xvfb inside Docker container"
+      
       - name: Docker run plugin tests
         run: |
-          docker exec qgis-testing-environment sh -c "export DISPLAY=:99; qgis_testrunner.sh $TESTS_RUN_FUNCTION"
+          # Bruker xvfb-run til å håndtere den virtuelle skjermen automatisk
+          docker exec qgis-testing-environment sh -c "xvfb-run qgis_testrunner.sh $TESTS_RUN_FUNCTION"
 
   Check-code-quality:
     runs-on: ubuntu-latest
