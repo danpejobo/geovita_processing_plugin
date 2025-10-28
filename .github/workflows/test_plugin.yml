@@ -50,8 +50,6 @@ jobs:
           docker exec qgis-testing-environment sh -c "mkdir -p /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/"
           docker exec qgis-testing-environment sh -c "rm -f /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
           docker exec qgis-testing-environment sh -c "ln -s /tests_directory/$PLUGIN_NAME /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
-          
-          # ENDRING HER: Lagt til 'coverage' i installasjonen
           docker exec qgis-testing-environment sh -c "pip3 install --break-system-packages -r /tests_directory/REQUIREMENTS_TESTING.txt coverage"
           
           docker exec qgis-testing-environment sh -c "ls -l /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/"
@@ -62,10 +60,57 @@ jobs:
           docker exec qgis-testing-environment sh -c "touch /tests_directory/$PLUGIN_NAME/REMEDY_GIS_RiskTool/__init__.py"
           docker exec qgis-testing-environment ls -la /tests_directory/$PLUGIN_NAME/REMEDY_GIS_RiskTool  
   
+      - name: Create Pytest configuration (conftest.py)
+        run: |
+          docker exec qgis-testing-environment sh -c 'cat <<EOF > /tests_directory/conftest.py
+import pytest
+from qgis.core import QgsApplication
+import os
+import sys
+
+# Legg til plugin-roten og submodule-mappen i sys.path
+plugin_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "geovita_processing_plugin"))
+submodule_path = os.path.join(plugin_root, "REMEDY_GIS_RiskTool")
+sys.path.insert(0, plugin_root)
+sys.path.insert(0, submodule_path)
+
+@pytest.fixture(scope="session", autouse=True)
+def init_qgis_processing(qgis_app):
+    """Initialiserer QGIS Processing framework og registrerer plugin-provider."""
+    
+    print("Initializing QGIS Processing Framework...")
+    try:
+        from processing.core.Processing import Processing
+        Processing.initialize()
+        print("Processing Framework Initialized.")
+    except ImportError as e:
+        print(f"Could not import Processing: {e}")
+        pytest.skip("Failed to import QGIS Processing framework")
+
+    print("Registering Geovita provider...")
+    try:
+        from geovita_processing_plugin_provider import Geovita_processing_pluginProvider
+        provider = Geovita_processing_pluginProvider()
+        if QgsApplication.processingRegistry().addProvider(provider):
+            print(f"Successfully added provider: {provider.id()}")
+        else:
+            print("Failed to add provider.")
+    except ImportError as e:
+        print(f"Could not import Geovita provider: {e}")
+        pytest.skip("Failed to import Geovita provider")
+
+    yield
+
+    # Nedrigging
+    print("Deinitializing Processing Framework...")
+    QgsApplication.processingRegistry().removeProvider(provider.id())
+    Processing.deinitialize()
+EOF'
+
       - name: Docker run plugin tests
         run: |
-          # ENDRING HER: Setter PYTHONPATH til å inkludere submodule-mappen før pytest kjøres
-          docker exec qgis-testing-environment sh -c "cd /tests_directory && export PYTHONPATH=$PYTHONPATH:./geovita_processing_plugin/REMEDY_GIS_RiskTool && xvfb-run pytest"
+          # conftest.py håndterer nå all nødvendig oppsett
+          docker exec qgis-testing-environment sh -c "cd /tests_directory && xvfb-run pytest"
 
   Check-code-quality:
     runs-on: ubuntu-latest
