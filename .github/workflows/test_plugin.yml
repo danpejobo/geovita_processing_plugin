@@ -49,6 +49,10 @@ jobs:
 
       - name: Docker set up QGIS
         run: |
+          # NY LINJE: Opprett mappestrukturen QGIS forventer
+          docker exec qgis-testing-environment sh -c "mkdir -p /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/"
+          
+          # Resten av kommandoene dine vil nå fungere
           docker exec qgis-testing-environment sh -c "rm -f /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
           docker exec qgis-testing-environment sh -c "ln -s /tests_directory/$PLUGIN_NAME /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
           docker exec qgis-testing-environment sh -c "pip3 install -r /tests_directory/REQUIREMENTS_TESTING.txt"
@@ -61,11 +65,8 @@ jobs:
           docker exec qgis-testing-environment sh -c "touch /tests_directory/$PLUGIN_NAME/REMEDY_GIS_RiskTool/__init__.py"
           docker exec qgis-testing-environment ls -la /tests_directory/$PLUGIN_NAME/REMEDY_GIS_RiskTool  
   
-      # Fjernet steget "Install and start Xvfb inside Docker container"
-      
       - name: Docker run plugin tests
         run: |
-          # Bruker xvfb-run til å håndtere den virtuelle skjermen automatisk
           docker exec qgis-testing-environment sh -c "xvfb-run qgis_testrunner.sh $TESTS_RUN_FUNCTION"
 
   Check-code-quality:
