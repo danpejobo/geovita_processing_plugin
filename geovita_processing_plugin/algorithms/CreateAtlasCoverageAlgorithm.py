@@ -8,10 +8,9 @@ from qgis.core import (
     QgsProcessingParameterNumber,
     QgsProcessingParameterFeatureSink,
     QgsProperty,
-    QgsProcessingException,
-    QgsWkbTypes # Import WkbTypes
+    QgsProcessingException
 )
-import processing
+from qgis import processing
 
 from .base_algorithm import GvBaseProcessingAlgorithms
 
