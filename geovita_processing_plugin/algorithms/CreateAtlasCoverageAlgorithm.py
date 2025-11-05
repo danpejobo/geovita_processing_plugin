@@ -126,7 +126,7 @@ class CreateAtlasCoverageAlgorithm(GvBaseProcessingAlgorithms):
             QgsProcessingParameterNumber.Double,
             defaultValue=287.0
         )
-        param_short.setHelp(self.tr('The dimension of the paper perpendicular to the road (in millimeters).\n\Example: For a 297mm A3 sheet with 5mm margins, use 287.'))
+        param_short.setHelp(self.tr('The dimension of the paper perpendicular to the road (in millimeters).\n\nExample: For a 297mm A3 sheet with 5mm margins, use 287.'))
         self.addParameter(param_short)
 
         param_overlap = QgsProcessingParameterNumber(
