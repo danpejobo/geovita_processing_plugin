@@ -4,10 +4,13 @@
 
 [general]
 name=Geovita GIS Processing provider
-qgisMinimumVersion=3.28
-qgisMaximumVersion=3.99
 description=Aims to bring different Geovita custom geological and geotechnical processing algorithms to QGIS
-version=3.2.1
+
+qgisMinimumVersion=3.28
+qgisMaximumVersion=4.99
+supportsQt6=True
+
+version=3.3.0
 author=DPE
 email=dpe@geovita.no
 
@@ -32,7 +35,12 @@ repository=https://github.com/danpejobo/geovita_processing_plugin
 hasProcessingProvider=yes
 
 # Uncomment the following line and add your changelog:
-changelog=v.3.2.1 (14.03.2025)
+changelog=v.3.3.0 (05.11.2025)
+	- Added new Algorithm: "Create Atlas Coverage" (`geovita:create_atlas_coverage`)
+	- Added a complete unit test suite for the new `CreateAtlasCoverageAlgorithm`
+	- Update qgisMaximumVersion to 4.99 to support qgis4 and qt6
+
+	v.3.2.1 (14.03.2025)
 	- Update metadata and descriptions
 
 	v.3.2.0 (13.03.2025)

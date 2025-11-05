@@ -8,6 +8,7 @@ on:
     paths:
     - "geovita_processing_plugin/**"
     - ".github/workflows/test_plugin.yml"
+    - "conftest.py"
   pull_request:
     branches:
       - main
@@ -15,13 +16,12 @@ on:
     paths:
     - "geovita_processing_plugin/**"
     - ".github/workflows/test_plugin.yml"
+    - "conftest.py"
   workflow_dispatch:
 
 env:
   # plugin name/directory where the code for the plugin is stored
   PLUGIN_NAME: geovita_processing_plugin
-  # python notation to test running inside plugin
-  TESTS_RUN_FUNCTION: geovita_processing_plugin.test_suite.test_package
   # Docker settings
   DOCKER_IMAGE: qgis/qgis
 
@@ -33,7 +33,7 @@ jobs:
 
     strategy:
       matrix:
-        docker_tags: [release-3_28, release-3_36]
+        docker_tags: [3.36, 3.44.4, latest]
 
     steps:
 
@@ -49,11 +49,12 @@ jobs:
 
       - name: Docker set up QGIS
         run: |
-          docker exec qgis-testing-environment sh -c "qgis_setup.sh $PLUGIN_NAME"
-          docker exec qgis-testing-environment sh -c "cat /root/.local/share/QGIS/QGIS3/profiles/default/QGIS/QGIS3.ini"
+          docker exec qgis-testing-environment sh -c "mkdir -p /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/"
           docker exec qgis-testing-environment sh -c "rm -f /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
           docker exec qgis-testing-environment sh -c "ln -s /tests_directory/$PLUGIN_NAME /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
-          docker exec qgis-testing-environment sh -c "pip3 install -r /tests_directory/REQUIREMENTS_TESTING.txt"
+          
+          # ENDRING HER: Lagt til 'pytest-qgis' eksplisitt for å være sikker
+          docker exec qgis-testing-environment sh -c "pip3 install --break-system-packages -r /tests_directory/REQUIREMENTS_TESTING.txt"
           
           docker exec qgis-testing-environment sh -c "ls -l /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/"
           docker exec qgis-testing-environment sh -c "ls -l /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/$PLUGIN_NAME"
@@ -63,15 +64,10 @@ jobs:
           docker exec qgis-testing-environment sh -c "touch /tests_directory/$PLUGIN_NAME/REMEDY_GIS_RiskTool/__init__.py"
           docker exec qgis-testing-environment ls -la /tests_directory/$PLUGIN_NAME/REMEDY_GIS_RiskTool  
   
-      - name: Install and start Xvfb inside Docker container
-        run: |
-          docker exec qgis-testing-environment apt update
-          docker exec qgis-testing-environment apt install -y xvfb
-          docker exec qgis-testing-environment Xvfb :99 -screen 0 1024x768x24 &
-
       - name: Docker run plugin tests
         run: |
-          docker exec qgis-testing-environment sh -c "export DISPLAY=:99; qgis_testrunner.sh $TESTS_RUN_FUNCTION"
+          # ENDRING HER: Kjører 'python3 -m pytest' for å sikre riktig miljø
+          docker exec qgis-testing-environment sh -c "cd /tests_directory && xvfb-run python3 -m pytest"
 
   Check-code-quality:
     runs-on: ubuntu-latest

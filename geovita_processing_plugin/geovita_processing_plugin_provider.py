@@ -35,7 +35,8 @@ from qgis.core import QgsProcessingProvider
 from geovita_processing_plugin.algorithms import (
     BegrensSkadeExcavation,
     BegrensSkadeImpactMap,
-    BegrensSkadeTunnel
+    BegrensSkadeTunnel,
+    CreateAtlasCoverageAlgorithm
 )
 
 from geovita_processing_plugin.utilities.gui import GuiUtils
@@ -60,7 +61,7 @@ class GeovitaProcessingPluginProvider(QgsProcessingProvider):
         """
         Loads all algorithms belonging to this provider.
         """
-        for alg in [BegrensSkadeExcavation, BegrensSkadeImpactMap, BegrensSkadeTunnel]:
+        for alg in [BegrensSkadeExcavation, BegrensSkadeImpactMap, BegrensSkadeTunnel, CreateAtlasCoverageAlgorithm]:
             self.addAlgorithm(alg())
         # add additional algorithms here
         # self.addAlgorithm(MyOtherAlgorithm())

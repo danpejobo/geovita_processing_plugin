@@ -4,3 +4,5 @@ mock
 flake8
 pep257
 pylint
+coverage 
+pytest-qgis
