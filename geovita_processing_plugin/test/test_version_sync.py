@@ -36,3 +36,7 @@ def test_package_version_matches_pyproject():
 
 def test_metadata_version_matches_pyproject():
     assert read_version_from_metadata() == read_version_from_pyproject()
+
+
+def test_package_version_matches_metadata():
+    assert plugin.__version__ == read_version_from_metadata()

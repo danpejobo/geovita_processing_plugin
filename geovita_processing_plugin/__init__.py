@@ -27,40 +27,72 @@ __date__ = '2024-01-17'
 __copyright__ = '(C) 2024 by DPE'
 
 import sys
+import configparser
 from pathlib import Path
 from importlib import metadata
 
 
 PACKAGE_NAME = 'geovita-processing-plugin'
 _FALLBACK_VERSION = '0.0.0'
+_PLUGIN_DIR = Path(__file__).resolve().parent
+_PYPROJECT_CANDIDATES = (
+    _PLUGIN_DIR / 'pyproject.toml',
+    _PLUGIN_DIR.parent / 'pyproject.toml',
+)
+_METADATA_FILE = _PLUGIN_DIR / 'metadata.txt'
 
 
-def _read_version_from_pyproject() -> str:
+def _read_version_from_pyproject() -> str | None:
+    """Return the version declared in pyproject.toml if available."""
+
     try:
         import tomllib  # type: ignore[attr-defined]
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover - only on Python <3.11 without tomli
         try:
             import tomli as tomllib  # type: ignore[no-redef]
         except ModuleNotFoundError:
-            return _FALLBACK_VERSION
+            return None
 
-    plugin_dir = Path(__file__).resolve().parent
-    candidates = [
-        plugin_dir / 'pyproject.toml',
-        plugin_dir.parent / 'pyproject.toml',
-    ]
-    for candidate in candidates:
-        if candidate.is_file():
-            with candidate.open('rb') as fh:
-                data = tomllib.load(fh)
-            return data.get('project', {}).get('version', _FALLBACK_VERSION)
+    for candidate in _PYPROJECT_CANDIDATES:
+        if not candidate.is_file():
+            continue
+        with candidate.open('rb') as fh:
+            data = tomllib.load(fh)
+        return data.get('project', {}).get('version')
+    return None
+
+
+def _read_version_from_metadata() -> str | None:
+    """Return the version declared in metadata.txt if available."""
+
+    if not _METADATA_FILE.is_file():
+        return None
+
+    parser = configparser.ConfigParser()
+    parser.optionxform = str
+    parser.read(_METADATA_FILE, encoding='utf-8')
+    try:
+        return parser.get('general', 'version')
+    except (configparser.NoSectionError, configparser.NoOptionError):
+        return None
+
+
+def _determine_version() -> str:
+    """Resolve the plugin version from packaging metadata or local files."""
+
+    try:
+        return metadata.version(PACKAGE_NAME)
+    except metadata.PackageNotFoundError:  # type: ignore[attr-defined]
+        pass
+
+    for reader in (_read_version_from_pyproject, _read_version_from_metadata):
+        version = reader()
+        if version:
+            return version
     return _FALLBACK_VERSION
 
 
-try:
-    __version__ = metadata.version(PACKAGE_NAME)
-except metadata.PackageNotFoundError:  # type: ignore[attr-defined]
-    __version__ = _read_version_from_pyproject()
+__version__ = _determine_version()
 
 
 # noinspection PyPep8Naming
