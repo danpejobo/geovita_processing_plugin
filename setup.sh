@@ -23,7 +23,6 @@ if [ -d "$ROOT_DIR" ]; then
   # Install dependencies
   pip install -r requirements.txt
   pip install -r REQUIREMENTS_TESTING.txt
-  pip install -e .
   echo "✔  Dependencies installed"
 else
   echo "ERROR: directory not found in $ROOT_DIR"
