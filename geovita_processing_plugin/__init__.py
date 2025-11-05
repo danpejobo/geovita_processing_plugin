@@ -26,10 +26,41 @@ __author__ = 'DPE'
 __date__ = '2024-01-17'
 __copyright__ = '(C) 2024 by DPE'
 
-__version__ = "3.2.2"
-
 import sys
 from pathlib import Path
+from importlib import metadata
+
+
+PACKAGE_NAME = 'geovita-processing-plugin'
+_FALLBACK_VERSION = '0.0.0'
+
+
+def _read_version_from_pyproject() -> str:
+    try:
+        import tomllib  # type: ignore[attr-defined]
+    except ModuleNotFoundError:
+        try:
+            import tomli as tomllib  # type: ignore[no-redef]
+        except ModuleNotFoundError:
+            return _FALLBACK_VERSION
+
+    plugin_dir = Path(__file__).resolve().parent
+    candidates = [
+        plugin_dir / 'pyproject.toml',
+        plugin_dir.parent / 'pyproject.toml',
+    ]
+    for candidate in candidates:
+        if candidate.is_file():
+            with candidate.open('rb') as fh:
+                data = tomllib.load(fh)
+            return data.get('project', {}).get('version', _FALLBACK_VERSION)
+    return _FALLBACK_VERSION
+
+
+try:
+    __version__ = metadata.version(PACKAGE_NAME)
+except metadata.PackageNotFoundError:  # type: ignore[attr-defined]
+    __version__ = _read_version_from_pyproject()
 
 
 # noinspection PyPep8Naming
